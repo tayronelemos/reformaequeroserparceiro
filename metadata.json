@@ -1,0 +1,5 @@
+{
+  "name": "Reformaê - Seja um Parceiro",
+  "description": "Landing page de captação de parceiros regionais para o app Reformaê.",
+  "requestFramePermissions": ["geolocation"]
+}
