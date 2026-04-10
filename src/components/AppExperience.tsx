@@ -155,45 +155,44 @@ export default function AppExperience() {
               scrollPaddingRight: '0'
             }}
           >
-            <div className="flex gap-6 md:gap-10 items-end mx-auto">
-              {screens[activeTab].map((screen, idx) => (
-                <motion.div
-                  key={`${activeTab}-${idx}`}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="flex-shrink-0 w-[240px] md:w-[280px] snap-center first:ml-[calc(50vw-120px)] last:mr-[calc(50vw-120px)] md:first:ml-0 md:last:mr-0"
-                >
-                    <motion.div
-                      animate={{
-                        scale: activeIndex === idx ? 1.05 : 0.9,
-                        opacity: activeIndex === idx ? 1 : 0.6,
-                        y: activeIndex === idx ? 0 : 30
-                      }}
-                      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                      className="relative group"
-                    >
-                      {/* iPhone Mockup Frame */}
-                      <div className="relative w-[240px] h-[480px] md:w-[280px] md:h-[560px] bg-slate-900 rounded-[3rem] p-2 md:p-2.5 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] border-[4px] md:border-[6px] border-slate-800 mx-auto">
-                        {/* Dynamic Island */}
-                        <div className="absolute top-5 left-1/2 -translate-x-1/2 w-[60px] h-[18px] bg-slate-900 rounded-full z-40"></div>
-                        
-                        {/* Screen Content */}
-                        <div className="relative w-full h-full rounded-[2.2rem] overflow-hidden bg-white">
-                          <img 
-                            src={screen.image} 
-                            alt={screen.title}
-                            className="w-full h-full object-cover"
-                          />
+            <AnimatePresence mode="wait">
+              <div className="flex gap-6 md:gap-10 items-end mx-auto" key={activeTab}>
+                {screens[activeTab].map((screen, idx) => (
+                  <motion.div
+                    key={`${activeTab}-${idx}`}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="flex-shrink-0 w-[240px] md:w-[280px] snap-center first:ml-[calc(50vw-120px)] last:mr-[calc(50vw-120px)] md:first:ml-0 md:last:mr-0"
+                  >
+                      <motion.div
+                        animate={{
+                          scale: activeIndex === idx ? 1.05 : 0.9,
+                          opacity: activeIndex === idx ? 1 : 0.6,
+                          y: activeIndex === idx ? 0 : 30
+                        }}
+                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                        className="relative group"
+                      >
+                        {/* iPhone Mockup Frame */}
+                        <div className="relative w-[240px] h-[480px] md:w-[280px] md:h-[560px] bg-slate-900 rounded-[3rem] p-2 md:p-2.5 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] border-[4px] md:border-[6px] border-slate-800 mx-auto">
+                          {/* Dynamic Island */}
+                          <div className="absolute top-5 left-1/2 -translate-x-1/2 w-[60px] h-[18px] bg-slate-900 rounded-full z-40"></div>
+                          
+                          {/* Screen Content */}
+                          <div className="relative w-full h-full rounded-[2.2rem] overflow-hidden bg-white">
+                            <img 
+                              src={screen.image} 
+                              alt={screen.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         </div>
-                      </div>
+                      </motion.div>
                     </motion.div>
-                  </motion.div>
-                ))}
+                  ))}
               </div>
             </AnimatePresence>
-
-            <div className="flex-shrink-0 w-10 md:w-32" /> {/* Right Spacer */}
           </div>
         </div>
       </div>
