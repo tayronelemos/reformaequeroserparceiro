@@ -31,7 +31,7 @@ export default function LocalProof() {
   ];
 
   return (
-    <section className="py-24 md:py-32 bg-white relative overflow-hidden" id="joao-pessoa">
+    <section className="pt-4 pb-24 md:pt-16 md:pb-32 bg-white relative overflow-hidden" id="joao-pessoa">
       {/* Background Decorators */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
       
@@ -47,7 +47,7 @@ export default function LocalProof() {
               className="w-full lg:w-1/2"
             >
               <div className="relative group">
-                <div className="relative rounded-[2.5rem] overflow-hidden border border-slate-100">
+                <div className="relative rounded-[2.5rem] overflow-hidden">
                   <img 
                     src={jpImg} 
                     alt="João Pessoa - Mercado em Crescimento" 

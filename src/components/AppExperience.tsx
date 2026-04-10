@@ -148,25 +148,22 @@ export default function AppExperience() {
           <div 
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar py-20 px-4 md:px-[5%]"
+            className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar py-20 px-8"
             style={{ 
               perspective: '1200px',
-              scrollPaddingLeft: '2rem'
+              scrollPaddingLeft: '0',
+              scrollPaddingRight: '0'
             }}
           >
-            {/* Left Padding Spacer - Replaced with better padding strategy */}
-            <div className="flex-shrink-0 w-4 md:w-20" /> 
-            
-            <AnimatePresence mode="wait">
-              <div className="flex gap-6 md:gap-10 items-end">
-                {screens[activeTab].map((screen, idx) => (
-                  <motion.div
-                    key={`${activeTab}-${idx}`}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="flex-shrink-0 w-[240px] md:w-[280px] snap-start"
-                  >
+            <div className="flex gap-6 md:gap-10 items-end mx-auto">
+              {screens[activeTab].map((screen, idx) => (
+                <motion.div
+                  key={`${activeTab}-${idx}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="flex-shrink-0 w-[240px] md:w-[280px] snap-center first:ml-[calc(50vw-120px)] last:mr-[calc(50vw-120px)] md:first:ml-0 md:last:mr-0"
+                >
                     <motion.div
                       animate={{
                         scale: activeIndex === idx ? 1.05 : 0.9,

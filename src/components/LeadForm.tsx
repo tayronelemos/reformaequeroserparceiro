@@ -146,13 +146,18 @@ export function LeadForm() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Cidade de Interesse</label>
-                    <input
-                      required
-                      name="cidade"
-                      type="text"
-                      className="w-full px-5 md:px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm md:text-base"
-                      placeholder="Ex: São Paulo"
-                    />
+                    <div className="group relative">
+                      <select
+                        required
+                        name="cidade"
+                        className="w-full px-5 md:px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm md:text-base appearance-none cursor-pointer pr-12 font-bold text-slate-900"
+                      >
+                        <option value="João Pessoa">João Pessoa</option>
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <ChevronDown size={18} />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

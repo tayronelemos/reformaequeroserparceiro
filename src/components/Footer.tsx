@@ -103,14 +103,14 @@ export function Footer() {
                   <a href="https://wa.me/5583999610819" target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-primary transition-colors">+55 83 99961-0819</a>
                 </div>
               </li>
-              <li className="text-sm font-bold text-slate-500">
-                Suporte dedicado para nossos parceiros estratégicos.
+              <li className="text-sm font-bold text-slate-500 text-center md:text-left pt-4">
+                Suporte dedicado para nossos <br className="md:hidden" /> parceiros estratégicos.
               </li>
             </ul>
           </div>
         </div>
         
-        <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8 text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest text-center md:text-left">
+        <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8 text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest text-center md:text-left">
           <p>© 2026 Reformaê. Todos os direitos reservados®.</p>
           <div className="flex flex-col md:flex-row items-center gap-4">
             <span className="text-[10px]">Desenvolvido por:</span>

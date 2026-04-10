@@ -85,7 +85,7 @@ export default function IntentSection() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.4, duration: 0.8 }}
-                  className="absolute -right-8 top-0 md:-right-20 md:top-10 z-20"
+                  className="absolute -right-8 -top-12 md:-right-24 md:top-0 z-20"
                 >
                   <div className="bg-white/90 backdrop-blur-xl p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-slate-100 max-w-[240px]">
                     <div className="flex items-center gap-3 mb-2">
@@ -106,7 +106,7 @@ export default function IntentSection() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.6, duration: 0.8 }}
-                  className="absolute -left-8 bottom-20 md:-left-16 md:bottom-32 z-20"
+                  className="absolute -left-8 -bottom-12 md:-left-24 md:-bottom-8 z-20"
                 >
                   <div className="bg-slate-900 backdrop-blur-xl p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-800 max-w-[240px]">
                     <div className="flex items-center gap-3 mb-2">
