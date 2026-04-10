@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, Target, Zap, MousePointer2, CheckCircle2 } from 'lucide-react';
-import sessionImage from '../assets/images/foto-sessão.png';
+import sessionImage from '../assets/images/foto-sessao.png';
 
 export default function IntentSection() {
   return (
