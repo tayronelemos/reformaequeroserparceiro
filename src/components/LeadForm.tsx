@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, ChevronDown, ChevronUp, ShieldCheck, Clock, MessageSquare, CheckCircle2, Sparkles } from 'lucide-react';
+import { Send, ChevronDown, MessageSquare, CheckCircle2, Sparkles, Zap } from 'lucide-react';
 
 export function LeadForm() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -46,29 +46,38 @@ export function LeadForm() {
           <div className="flex-1 p-8 md:p-12 lg:p-20 bg-slate-50 border-r border-slate-100">
             <div className="max-w-md mx-auto lg:mx-0">
               <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6 md:mb-8 leading-[1] tracking-tight text-center lg:text-left">
-                Candidate-se para a <span className="text-primary">sua cidade.</span>
+                Garanta sua posição na <span className="text-primary">sua região</span>
               </h2>
               <p className="text-base md:text-lg text-slate-500 mb-10 md:mb-12 leading-relaxed text-center lg:text-left">
-                As vagas são limitadas por território. Preencha o formulário e nossa equipe entrará em contato para validar seu perfil.
+                As vagas são limitadas por categoria e cidade. Preencha seus dados e nossa equipe entrará em contato para finalizar sua entrada como parceiro.
               </p>
 
               <div className="space-y-6 md:space-y-8">
                 <div className="flex flex-col sm:flex-row items-center lg:items-start text-center lg:text-left gap-4 md:gap-6">
                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 flex-shrink-0">
-                    <ShieldCheck className="w-6 h-6 text-primary" />
+                    <CheckCircle2 className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-900">Análise de Perfil</div>
-                    <div className="text-sm text-slate-500">Garantimos que apenas os melhores parceiros assumam as cidades.</div>
+                    <div className="font-bold text-slate-900">Entrada como parceiro</div>
+                    <div className="text-sm text-slate-500">Sua empresa passa a ter presença dentro do app e começa a ser exibida para usuários da sua região.</div>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center lg:items-start text-center lg:text-left gap-4 md:gap-6">
                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 flex-shrink-0">
-                    <Clock className="w-6 h-6 text-primary" />
+                    <Zap className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-900">Resposta em 24h</div>
-                    <div className="text-sm text-slate-500">Nossa equipe comercial analisa e responde rapidamente.</div>
+                    <div className="font-bold text-slate-900">Ativação rápida</div>
+                    <div className="text-sm text-slate-500">Após a confirmação, sua empresa já pode começar a aparecer e divulgar ofertas.</div>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center lg:items-start text-center lg:text-left gap-4 md:gap-6">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 flex-shrink-0">
+                    <MessageSquare className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900">Suporte inicial</div>
+                    <div className="text-sm text-slate-500">Nossa equipe te orienta para aproveitar ao máximo a plataforma e gerar resultados.</div>
                   </div>
                 </div>
               </div>
@@ -148,13 +157,13 @@ export function LeadForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Por que quer ser parceiro?</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Sobre sua empresa</label>
                   <textarea
                     required
                     name="mensagem"
                     rows={4}
                     className="w-full px-5 md:px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none text-sm md:text-base"
-                    placeholder="Conte-nos um pouco sobre você..."
+                    placeholder="Fale brevemente sobre seu negócio, produtos ou serviços."
                   ></textarea>
                 </div>
 
@@ -162,7 +171,7 @@ export function LeadForm() {
                   disabled={status === 'loading'}
                   className="w-full py-5 bg-primary text-white font-black text-xs md:text-sm uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50 group"
                 >
-                  {status === 'loading' ? 'Enviando...' : 'Enviar Candidatura'}
+                  {status === 'loading' ? 'Enviando...' : 'Quero ser parceiro'}
                   <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 </button>
                 
@@ -183,68 +192,44 @@ export function FAQ() {
 
   const faqs = [
     {
-      question: 'Preciso ter experiência em construção civil?',
-      answer: 'Não. O seu papel como parceiro não é executar serviços, e sim gerenciar a operação na sua região. Você será responsável por desenvolver a rede de profissionais e acompanhar a demanda local, enquanto os serviços são realizados pelos profissionais cadastrados na plataforma.'
+      question: 'Como minha empresa aparece dentro do app?',
+      answer: 'Sua empresa pode ser exibida em diferentes pontos estratégicos dentro do Reformaê, como notificações para usuários da região, mensagens patrocinadas, banners no app e destaque durante a navegação. Isso garante visibilidade constante para quem já está procurando serviços ou soluções.'
     },
     {
-      question: 'O que exatamente faz um parceiro do Reformaê?',
-      answer: 'O parceiro é responsável por desenvolver e acompanhar a operação do Reformaê na sua região. Isso inclui atrair profissionais, acompanhar o crescimento da base de usuários e monitorar a demanda de serviços. Você atua como gestor da operação local, não como prestador de serviço.'
+      question: 'Que tipo de clientes vou alcançar?',
+      answer: 'Você será visto por usuários que já estão dentro do app procurando profissionais, serviços ou soluções para suas casas. Ou seja, não é público frio — são pessoas com intenção real de compra.'
     },
     {
-      question: 'Como o parceiro ganha dinheiro?',
-      answer: 'O parceiro ganha com base na movimentação da plataforma na sua região. Cada serviço gerado, cada conexão realizada e cada oportunidade criada dentro do sistema contribui para a sua receita. Quanto maior a atividade na sua região, maior o seu potencial de ganho.'
+      question: 'Preciso pagar mensalidade?',
+      answer: 'Não. O modelo é simples: pagamento único de R$699,90 com validade de 2 anos. Sem mensalidades, sem taxas recorrentes.'
     },
     {
-      question: 'Quanto tempo leva para começar a faturar?',
-      answer: 'O início pode variar de acordo com a ativação da sua região. Em geral, os primeiros resultados começam a aparecer nos primeiros meses, com potencial de crescimento entre 3 a 6 meses conforme a base de usuários e profissionais aumenta.'
+      question: 'Como posso divulgar minhas ofertas?',
+      answer: 'Você poderá divulgar promoções, campanhas e ofertas diretamente dentro do app, alcançando usuários ativos da sua região através de notificações e espaços estratégicos.'
     },
     {
-      question: 'Existe exclusividade por região?',
-      answer: 'Sim. Trabalhamos com um modelo de operação regional. Cada parceiro atua em uma área específica, o que permite desenvolver o mercado local com mais foco e potencial de crescimento.'
+      question: 'O app já tem usuários?',
+      answer: 'Sim. O Reformaê está sendo lançado com foco local e já conta com uma base inicial de usuários e profissionais cadastrados, além de estratégias de crescimento contínuo na região.'
     },
     {
-      question: 'Preciso ter equipe ou estrutura física?',
-      answer: 'Não. O modelo foi pensado para ser leve e escalável. Você não precisa de escritório, equipe operacional ou estrutura física — toda a operação acontece através da plataforma.'
+      question: 'Vale a pena esse investimento?',
+      answer: 'Sim — principalmente pelo momento. Você entra no início da plataforma, com menos concorrência e mais visibilidade. Além disso, um único cliente já pode pagar o valor do investimento.'
     },
     {
-      question: 'Como funciona a entrada de profissionais na plataforma?',
-      answer: 'Os profissionais se cadastram, passam por validação e começam a receber oportunidades de serviços. Você acompanha esse crescimento e pode atuar na expansão da rede na sua região.'
+      question: 'Quantas empresas podem entrar como parceiras?',
+      answer: 'Para manter a qualidade e a visibilidade, limitamos o número de parceiros por categoria e região. Isso evita saturação e aumenta suas chances de resultado.'
     },
     {
-      question: 'O Reformaê já está pronto?',
-      answer: 'Estamos na fase final de desenvolvimento, com cerca de 80% da plataforma concluída. O lançamento oficial está previsto para o final de abril. Neste momento, já estamos selecionando e estruturando os parceiros responsáveis por cada região, para que a operação comece de forma organizada e com alto potencial de crescimento desde o início.'
+      question: 'Minha empresa precisa ter algum requisito?',
+      answer: 'Não há burocracia. Se sua empresa atua com serviços, construção, reformas ou imóveis, ela já pode fazer parte da plataforma.'
     },
     {
-      question: 'Qual o suporte que eu recebo?',
-      answer: 'Você terá suporte técnico e acompanhamento durante a sua jornada. O objetivo é garantir que você consiga estruturar e expandir sua operação com segurança.'
+      question: 'Como funciona na prática depois que entro?',
+      answer: 'Após a entrada, sua empresa passa a ter presença dentro do app e pode começar a divulgar ofertas e ser visualizada pelos usuários. Você começa a gerar visibilidade e oportunidades desde o início.'
     },
     {
-      question: 'Existe limite de crescimento?',
-      answer: 'Não. O modelo é escalável. Quanto maior a demanda e a rede de profissionais na sua região, maior o seu potencial de faturamento.'
-    },
-    {
-      question: 'Preciso investir em marketing?',
-      answer: 'O parceiro pode acelerar o crescimento local com ações estratégicas, mas a plataforma também trabalha para gerar demanda. O crescimento acontece de forma combinada entre tecnologia e expansão da rede.'
-    },
-    {
-      question: 'Por que entrar agora?',
-      answer: 'Estamos na fase de expansão regional. Isso significa que os primeiros parceiros têm a oportunidade de construir a base da sua região desde o início, com muito mais espaço para crescimento.'
-    },
-    {
-      question: 'O que acontece se eu não entrar agora?',
-      answer: 'Outros parceiros podem assumir a operação da sua região. E quem entra primeiro constrói vantagem competitiva no mercado local.'
-    },
-    {
-      question: 'Esse modelo é parecido com franquia?',
-      answer: 'Ele é inspirado em modelos de expansão, mas com uma grande diferença: Você não precisa de estrutura física, equipe ou operação pesada. É um modelo mais leve, digital e escalável.'
-    },
-    {
-      question: 'O Reformaê garante faturamento?',
-      answer: 'Não existe garantia de faturamento, pois o resultado depende da ativação da região e da gestão do parceiro. Porém, o modelo foi estruturado para gerar oportunidades reais e escaláveis.'
-    },
-    {
-      question: 'Como faço para começar?',
-      answer: 'Basta se candidatar como parceiro. Após análise, você receberá todas as orientações para iniciar a operação na sua região.'
+      question: 'E se eu tiver dúvidas ou precisar de ajuda?',
+      answer: 'Você terá suporte direto para entender como aproveitar melhor a plataforma e gerar resultados com sua presença no app.'
     }
   ];
 

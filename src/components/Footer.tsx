@@ -54,7 +54,7 @@ export function Footer() {
     <footer className="bg-white text-slate-900 py-24 border-t border-slate-100">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="mb-8">
               <img src={logoClaro} alt="Reformaê" className="h-10 w-auto" />
             </div>
@@ -70,34 +70,36 @@ export function Footer() {
             </div>
           </div>
           
-          <div>
+          <div className="text-center md:text-left">
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Navegação</h4>
             <ul className="space-y-4 font-bold text-slate-600">
-              <li><a href="#" className="hover:text-primary transition-colors">Oportunidade</a></li>
-              <li><a href="#map-section" className="hover:text-primary transition-colors">Mapa de Expansão</a></li>
-              <li><a href="#lead-form" className="hover:text-primary transition-colors">Seja um Parceiro</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">FAQ</a></li>
+              <li><a href="#home" className="hover:text-primary transition-colors">Home</a></li>
+              <li><a href="#app-experience" className="hover:text-primary transition-colors">O App</a></li>
+              <li><a href="#oportunidade" className="hover:text-primary transition-colors">Oportunidade</a></li>
+              <li><a href="#joao-pessoa" className="hover:text-primary transition-colors">João Pessoa</a></li>
+              <li><a href="#planos" className="hover:text-primary transition-colors">Planos de Investimento</a></li>
+              <li><a href="#faq" className="hover:text-primary transition-colors">FAQ</a></li>
             </ul>
           </div>
           
-          <div>
+          <div className="text-center md:text-left">
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Contato</h4>
             <ul className="space-y-6">
-              <li className="flex items-start gap-4">
+              <li className="flex flex-col md:flex-row items-center md:items-start gap-4">
                 <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 flex-shrink-0">
                   <Mail className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">E-mail</div>
-                  <div className="font-bold text-slate-900">parceriareformae@gmail.com</div>
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 text-center md:text-left">E-mail</div>
+                  <div className="font-bold text-slate-900 break-all md:break-normal">parceriareformae@gmail.com</div>
                 </div>
               </li>
-              <li className="flex items-start gap-4">
+              <li className="flex flex-col md:flex-row items-center md:items-start gap-4">
                 <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 flex-shrink-0">
                   <MessageCircle className="w-4 h-4 text-emerald-500" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">WhatsApp</div>
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 text-center md:text-left">WhatsApp</div>
                   <a href="https://wa.me/5583999610819" target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-primary transition-colors">+55 83 99961-0819</a>
                 </div>
               </li>
@@ -108,9 +110,9 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 text-slate-400 text-xs font-bold uppercase tracking-widest">
+        <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-8 text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest text-center md:text-left">
           <p>© 2026 Reformaê. Todos os direitos reservados®.</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col md:flex-row items-center gap-4">
             <span className="text-[10px]">Desenvolvido por:</span>
             <a href="https://criativosbrasil.com.br" target="_blank" rel="noopener noreferrer">
               <img src={logoCriativos} alt="Criativos Brasil" className="h-8 w-auto" />
@@ -134,16 +136,11 @@ export function Navbar() {
   }, []);
 
   const menuItems = [
-    { label: 'Home', href: '#' },
-    { 
-      label: 'Oportunidade', 
-      dropdown: [
-        { label: 'Visão Geral', href: '#opportunity-premium' },
-        { label: 'Como Funciona', href: '#how-it-works' },
-        { label: 'Ganhos', href: '#simulator' }
-      ] 
-    },
-    { label: 'Mapa', href: '#map-section' },
+    { label: 'Home', href: '#home' },
+    { label: 'O App', href: '#app-experience' },
+    { label: 'Oportunidade', href: '#oportunidade' },
+    { label: 'João Pessoa', href: '#joao-pessoa' },
+    { label: 'Planos', href: '#planos' },
     { label: 'FAQ', href: '#faq' }
   ];
 
@@ -204,7 +201,7 @@ export function Navbar() {
               onClick={() => document.getElementById('lead-form')?.scrollIntoView({ behavior: 'smooth' })}
               className="hidden sm:block px-6 md:px-8 py-2.5 md:py-3.5 bg-slate-900 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl md:rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
             >
-              Seja um parceiro
+              Quero ser parceiro
             </button>
             
             {/* Mobile Menu Toggle */}
@@ -259,7 +256,7 @@ export function Navbar() {
                   }}
                   className="w-full py-4 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 mt-4"
                 >
-                  Seja um parceiro
+                  Quero ser parceiro
                 </button>
               </div>
             </motion.div>
