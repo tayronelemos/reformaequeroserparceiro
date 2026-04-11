@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase (Backend version using Service Role if needed, but here Anon works if RLS allows)
