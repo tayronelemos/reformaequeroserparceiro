@@ -73,7 +73,8 @@ export function Footer() {
           <div className="text-center md:text-left">
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Navegação</h4>
             <ul className="space-y-4 font-bold text-slate-600">
-              <li><a href="#home" className="hover:text-primary transition-colors">Home</a></li>
+              <li><a href="/" className="hover:text-primary transition-colors">Home</a></li>
+              <li><a href="/trabalhe-conosco" className="hover:text-primary transition-colors">Trabalhe Conosco</a></li>
               <li><a href="#app-experience" className="hover:text-primary transition-colors">O App</a></li>
               <li><a href="#oportunidade" className="hover:text-primary transition-colors">Oportunidade</a></li>
               <li><a href="#joao-pessoa" className="hover:text-primary transition-colors">João Pessoa</a></li>
@@ -136,20 +137,24 @@ export function Navbar() {
   }, []);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const targetId = href.replace('#', '');
-    const element = document.getElementById(targetId);
-    if (element) {
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      const targetId = href.replace('#', '');
+      const element = document.getElementById(targetId);
+      if (element) {
+        setIsMobileMenuOpen(false);
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    } else {
+      // Normal navigation for page routes
       setIsMobileMenuOpen(false);
-      // Pequeno timeout para garantir que o menu comece a fechar antes do scroll
-      setTimeout(() => {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
     }
   };
 
-  const menuItems = [
-    { label: 'Home', href: '#home' },
+  const menuItems: { label: string; href: string; dropdown?: { label: string; href: string }[] }[] = [
+    { label: 'Home', href: '/' },
     { label: 'O App', href: '#app-experience' },
     { label: 'Oportunidade', href: '#oportunidade' },
     { label: 'João Pessoa', href: '#joao-pessoa' },

@@ -3,62 +3,85 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import Hero from './components/Hero';
-import AppExperience from './components/AppExperience';
-import ServiceGrid from './components/ServiceGrid';
-import IntentSection from './components/IntentSection';
-import BenefitsGrid from './components/BenefitsGrid';
-import LocalProof from './components/LocalProof';
-import AppDifferential from './components/AppDifferential';
-import AppShowcase from './components/AppShowcase';
-import PricingSection from './components/PricingSection';
-import TargetAudience from './components/TargetAudience';
-import { FAQ, LeadForm } from './components/LeadForm';
-import { Navbar, Footer } from './components/Footer';
-import FloatingActions from './components/FloatingActions';
+import React, { useState, useEffect } from 'react';
+import Home from './pages/Home';
+import ProfessionalLanding from './pages/ProfessionalLanding';
+import AdminDashboard from './pages/AdminDashboard';
 
 export default function App() {
-  return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Navbar />
-      <main className="flex-grow">
-        {/* 1. HERO - Manter estrutura ajustada */}
-        <Hero />
-        
-        {/* NEW: APP EXPERIENCE - Visibilidade e Confiança Imediata */}
-        <AppExperience />
-        
-        {/* 2. SEÇÃO SERVIÇOS - Manter estrutura ajustada */}
-        <ServiceGrid />
-        
-        {/* 3. OPORTUNIDADE REAL - Momento exato da decisão */}
-        <IntentSection />
-        
-        {/* 4. COMO O PARCEIRO GANHA - 6 Cards de Benefícios */}
-        <BenefitsGrid />
-        
-        {/* 5. PROVA LOCAL - João Pessoa + Métricas + Comparativo */}
-        <LocalProof />
-        
-        {/* 6. DIFERENCIAL DO APP - Ambiente de Negócios vs Rede Social */}
-        <AppDifferential />
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
-        {/* 7. SHOWCASE DO APP - Visibilidade e Oportunidades Reais */}
-        <AppShowcase />
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    // Listen for back/forward buttons
+    window.addEventListener('popstate', handleLocationChange);
+    
+    // Listen for custom navigation events
+    window.addEventListener('pushstate', handleLocationChange);
+    window.addEventListener('replacestate', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('pushstate', handleLocationChange);
+      window.removeEventListener('replacestate', handleLocationChange);
+    };
+  }, []);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPath]);
+
+  // Simple interceptor for <a> tags to enable SPA navigation
+  useEffect(() => {
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a');
+      
+      if (anchor && anchor.href && anchor.origin === window.location.origin) {
+        const path = anchor.pathname;
+        const hash = anchor.hash;
         
-        {/* 7 & 8. INVESTIMENTO E ESCASSEZ - Preço Único e Vagas Limitadas */}
-        <PricingSection />
-        
-        {/* 9. PARA QUEM É - Segmentos Alvo e CTA Robusto */}
-        <TargetAudience />
-        
-        {/* FAQ & FORMULÁRIO FINAL */}
-        <FAQ />
-        <LeadForm />
-      </main>
-      <Footer />
-      <FloatingActions />
+        // If it's just an anchor link on the same page, let it be handled by browser/Footer.tsx
+        if (path === window.location.pathname && hash) {
+          return;
+        }
+
+        // If it's a different page, intercept
+        if (path !== window.location.pathname) {
+          e.preventDefault();
+          window.history.pushState({}, '', path);
+          window.dispatchEvent(new Event('pushstate'));
+        }
+      }
+    };
+
+    document.addEventListener('click', handleAnchorClick);
+    return () => document.removeEventListener('click', handleAnchorClick);
+  }, []);
+
+  // Routing Logic
+  const renderPage = () => {
+    switch (currentPath) {
+      case '/trabalhe-conosco':
+      case '/trabalhe-conosco/':
+        return <ProfessionalLanding />;
+      case '/admin':
+      case '/admin/':
+      case '/admin/profissionais':
+      case '/admin/profissionais/':
+        return <AdminDashboard />;
+      default:
+        return <Home />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen">
+      {renderPage()}
     </div>
   );
 }
