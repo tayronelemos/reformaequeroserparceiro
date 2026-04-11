@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
 
-  const { amount, externalId, taxId, name, email } = req.body;
+  const { amount, externalId, taxId, name, email, cellphone } = req.body;
   const apiKey = process.env.ABACATEPAY_API_KEY;
 
   if (!apiKey) {
@@ -28,7 +28,8 @@ export default async function handler(req, res) {
           customer: {
             name: name || "Profissional Reformaê",
             email: email || "contato@reformae.com.br",
-            taxId: taxId || "00000000000"
+            taxId: taxId || "00000000000",
+            cellphone: cellphone || "00000000000"
           }
         }
       })

@@ -559,7 +559,8 @@ export default function ProfessionalForm() {
                                     externalId: savedLeadId,
                                     taxId: taxId.replace(/\D/g, ''),
                                     name: `${formData.nome} ${formData.sobrenome}`,
-                                    email: formData.email
+                                    email: formData.email,
+                                    cellphone: formData.whatsapp.replace(/\D/g, '')
                                   })
                                 });
                                 
