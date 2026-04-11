@@ -535,11 +535,11 @@ export default function ProfessionalForm() {
                                   setPaymentStatus('PENDING');
                                 } else {
                                   const errorText = await res.text();
-                                  throw new Error(`Resposta inválida do servidor: ${errorText.slice(0, 100)}`);
+                                  throw new Error(`Erro do Servidor (${res.status}): ${errorText.slice(0, 50)}`);
                                 }
                               } catch (e: any) {
-                                console.error("Erro PIX:", e);
-                                alert(`Atenção: ${e.message}`);
+                                console.error("Erro ao gerar PIX:", e);
+                                alert(`Atenção: Não foi possível gerar o PIX. Detalhes: ${e.message}`);
                               } finally {
                                 setIsGeneratingPix(false);
                               }
