@@ -18,6 +18,7 @@ export default async function handler(req, res) {
   console.log('Início da Chave:', apiKey.substring(0, 8) + '...');
 
   try {
+    // Deploy Trigger: Using new production keys
     const apiResponse = await fetch('https://api.abacatepay.com/v2/transparents/create', {
       method: 'POST',
       headers: {
