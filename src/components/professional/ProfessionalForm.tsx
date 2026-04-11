@@ -57,7 +57,6 @@ export default function ProfessionalForm() {
   const [paymentStatus, setPaymentStatus] = useState<'IDLE' | 'PENDING' | 'PAID' | 'EXPIRED'>('IDLE');
   const [isGeneratingPix, setIsGeneratingPix] = useState(false);
   const [taxId, setTaxId] = useState('');
-  const [simulationStatus, setSimulationStatus] = useState<'IDLE' | 'SENDING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [copied, setCopied] = useState(false);
   const expRef = useRef<HTMLDivElement>(null);
 
@@ -527,7 +526,7 @@ export default function ProfessionalForm() {
                           <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Oferta de Lançamento</p>
                           <div className="flex items-center justify-center gap-2">
                             <span className="text-slate-400 line-through text-sm font-bold">R$ 59,90</span>
-                            <span className="text-3xl font-black text-slate-900 tracking-tighter">R$ 14,90</span>
+                            <span className="text-3xl font-black text-slate-900 tracking-tighter">R$ 1,00</span>
                           </div>
                           <p className="text-[9px] text-amber-600/70 font-bold mt-1 font-black uppercase tracking-widest leading-none">Pagamento único via PIX</p>
                         </div>
@@ -557,7 +556,7 @@ export default function ProfessionalForm() {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ 
-                                    amount: 1490, 
+                                    amount: 100, 
                                     externalId: savedLeadId,
                                     taxId: taxId.replace(/\D/g, ''),
                                     name: `${formData.nome} ${formData.sobrenome}`,
@@ -628,51 +627,6 @@ export default function ProfessionalForm() {
                           >
                             {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />} 
                             {copied ? 'CÓDIGO COPIADO!' : 'COPIAR CÓDIGO PIX'}
-                          </button>
-
-                          <button 
-                            onClick={async () => {
-                              if (!checkoutData?.id) {
-                                setSimulationStatus('ERROR');
-                                setTimeout(() => setSimulationStatus('IDLE'), 3000);
-                                return;
-                              }
-
-                              setSimulationStatus('SENDING');
-                              try {
-                                const res = await fetch('/api/simulate', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ id: checkoutData.id })
-                                });
-                                
-                                if (res.ok) {
-                                  setSimulationStatus('SUCCESS');
-                                } else {
-                                  setSimulationStatus('ERROR');
-                                }
-                              } catch (e) {
-                                setSimulationStatus('ERROR');
-                              } finally {
-                                setTimeout(() => setSimulationStatus('IDLE'), 4000);
-                              }
-                            }}
-                            className={`w-full py-2 border rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 mt-2 ${
-                              simulationStatus === 'SENDING' ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-wait' :
-                              simulationStatus === 'SUCCESS' ? 'bg-emerald-50 border-emerald-500/30 text-emerald-600' :
-                              simulationStatus === 'ERROR' ? 'bg-red-50 border-red-500/30 text-red-600' :
-                              'border-emerald-500/10 text-emerald-600/60 hover:bg-emerald-50 hover:border-emerald-500/30'
-                            }`}
-                            disabled={simulationStatus !== 'IDLE'}
-                          >
-                            {simulationStatus === 'SENDING' ? <Loader2 className="animate-spin" size={12} /> : 
-                             simulationStatus === 'SUCCESS' ? <CheckCircle2 size={12} /> :
-                             simulationStatus === 'ERROR' ? <XCircle size={12} /> :
-                             <Sparkles size={12} />}
-                            {simulationStatus === 'SENDING' ? 'ENVIANDO SIMULAÇÃO...' : 
-                             simulationStatus === 'SUCCESS' ? 'SIMULAÇÃO ENVIADA COM SUCESSO!' :
-                             simulationStatus === 'ERROR' ? 'ERRO NA SIMULAÇÃO' :
-                             'Simular Sucesso (Teste)'}
                           </button>
 
                           <div className="flex items-center gap-3 justify-center text-slate-400 text-[10px] font-black tracking-widest">
