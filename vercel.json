@@ -1,8 +1,16 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "source": "/api/abacatepay-create",
+      "destination": "/api/abacatepay-create"
+    },
+    {
+      "source": "/api/abacatepay-status",
+      "destination": "/api/abacatepay-status"
+    },
+    {
+      "source": "/api/abacatepay-webhook",
+      "destination": "/api/abacatepay-webhook"
     },
     {
       "source": "/((?!api/).*)",
