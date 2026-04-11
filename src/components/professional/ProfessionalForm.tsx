@@ -471,52 +471,52 @@ export default function ProfessionalForm() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 50 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="relative bg-white rounded-[3.5rem] w-full max-w-2xl overflow-hidden shadow-2xl my-auto"
+              className="relative bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl my-auto"
             >
               {paymentStatus !== 'PAID' ? (
                 <>
-                  {/* Top Bar / Header */}
-                  <div className="bg-primary p-12 text-center text-white relative overflow-hidden">
+                  {/* Top Bar / Header - Reduced Padding */}
+                  <div className="bg-primary p-6 md:p-10 text-center text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse" />
-                    <Sparkles className="w-12 h-12 mx-auto mb-6 text-yellow-300 animate-bounce" />
-                    <h3 className="text-3xl md:text-4xl font-black mb-4 tracking-tight leading-tight uppercase">
-                      QUER SAIR NA FRENTE E <br /> SER <span className="text-yellow-300 underline decoration-4 underline-offset-8">LISTA VIP</span>?
+                    <Sparkles className="w-8 h-8 mx-auto mb-4 text-yellow-300 animate-bounce" />
+                    <h3 className="text-xl md:text-2xl font-black mb-2 tracking-tight leading-tight uppercase">
+                      QUER SAIR NA FRENTE E <br /> SER <span className="text-yellow-300 underline decoration-2 underline-offset-4">LISTA VIP</span>?
                     </h3>
-                    <p className="text-white/80 font-bold text-lg max-w-md mx-auto">
-                      Garanta sua vaga agora mesmo e ganhe 2 meses grátis de uso do App Reformaê!
+                    <p className="text-white/80 font-bold text-sm max-w-xs mx-auto">
+                      Ganhe 2 meses grátis de uso do App Reformaê!
                     </p>
                   </div>
 
-                  {/* Body */}
-                  <div className="p-8 md:p-12 space-y-8">
+                  {/* Body - More Compact */}
+                  <div className="p-6 md:p-8 space-y-6">
                     {paymentStatus === 'IDLE' ? (
                       <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-2">
                           {[
-                            "Veja contatos de clientes na hora",
-                            "Envie orçamentos ilimitados",
-                            "Selo de profissional verificado",
-                            "Entra no Grupo VIP do WhatsApp"
+                            "Contatos na hora",
+                            "Orçamentos ilimitados",
+                            "Selo Verificado",
+                            "Grupo VIP WhatsApp"
                           ].map((feat, idx) => (
-                            <div key={idx} className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                              <div className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center flex-shrink-0">
-                                <Check size={14} className="stroke-[3]" />
+                            <div key={idx} className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                              <div className="w-5 h-5 bg-primary/10 text-primary rounded-full flex items-center justify-center flex-shrink-0">
+                                <Check size={10} className="stroke-[4]" />
                               </div>
-                              <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{feat}</span>
+                              <span className="text-[9px] font-black text-slate-700 uppercase tracking-tight">{feat}</span>
                             </div>
                           ))}
                         </div>
 
-                        <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl text-center">
-                          <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Oferta Única de Lançamento</p>
+                        <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl text-center">
+                          <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Oferta de Lançamento</p>
                           <div className="flex items-center justify-center gap-2">
-                            <span className="text-slate-400 line-through text-lg font-bold">R$ 59,90</span>
-                            <span className="text-4xl font-black text-slate-900 tracking-tighter">R$ 14,90</span>
+                            <span className="text-slate-400 line-through text-sm font-bold">R$ 59,90</span>
+                            <span className="text-3xl font-black text-slate-900 tracking-tighter">R$ 14,90</span>
                           </div>
-                          <p className="text-[10px] text-amber-600/70 font-bold mt-2 font-black uppercase tracking-widest leading-none">Pagamento único via PIX</p>
+                          <p className="text-[9px] text-amber-600/70 font-bold mt-1 font-black uppercase tracking-widest leading-none">Pagamento único via PIX</p>
                         </div>
 
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
                           <button
                             onClick={async () => {
                               setIsGeneratingPix(true);
@@ -527,18 +527,19 @@ export default function ProfessionalForm() {
                                   body: JSON.stringify({ amount: 1490, externalId: savedLeadId })
                                 });
                                 const data = await res.json();
+                                if (!res.ok) throw new Error(data.message || 'Erro na API');
                                 setCheckoutData(data);
                                 setPaymentStatus('PENDING');
-                              } catch (e) {
-                                alert("Erro ao gerar PIX. Tente novamente.");
+                              } catch (e: any) {
+                                alert(`Erro ao gerar PIX: ${e.message}. Verifique se a API Key está configurada na Vercel.`);
                               } finally {
                                 setIsGeneratingPix(false);
                               }
                             }}
                             disabled={isGeneratingPix}
-                            className="w-full h-18 bg-primary text-white font-black text-xl rounded-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 shadow-xl shadow-primary/30"
+                            className="w-full h-14 bg-primary text-white font-black text-lg rounded-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 shadow-lg shadow-primary/30"
                           >
-                            {isGeneratingPix ? <Loader2 className="animate-spin" /> : <><Crown /> QUERO SER VIP AGORA</>}
+                            {isGeneratingPix ? <Loader2 className="animate-spin" /> : <><Crown size={20} /> QUERO SER VIP AGORA</>}
                           </button>
                           
                           <button
@@ -549,7 +550,7 @@ export default function ProfessionalForm() {
                                 window.location.href = 'https://chat.whatsapp.com/GzHPBwmzDLl68O6YTCUkNU?mode=gi_t';
                               }, 3000);
                             }}
-                            className="text-slate-400 font-bold text-xs uppercase tracking-widest py-4 hover:text-slate-600"
+                            className="text-slate-400 font-bold text-[10px] uppercase tracking-widest py-2 hover:text-slate-600"
                           >
                             Não tenho interesse agora
                           </button>
