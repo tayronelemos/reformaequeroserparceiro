@@ -11,11 +11,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const response = await fetch('https://api.abacatepay.com/v1/billing/create', {
+    const apiResponse = await fetch('https://api.abacatepay.com/v1/billing/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         frequency: 'ONE_TIME',
@@ -25,27 +26,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             externalId: 'vip_list',
             name: 'Lista VIP Reformaê',
             quantity: 1,
-            unitPrice: amount // 1490 cents
+            unitPrice: amount
           }
         ],
-        returnUrl: 'https://queroserparceiroreformae.vercel.app/admin',
-        completionUrl: 'https://queroserparceiroreformae.vercel.app/admin',
-        externalId: externalId // The Supabase Professional ID
+        returnUrl: 'https://querouserparceiroreformae.vercel.app/',
+        completionUrl: 'https://querouserparceiroreformae.vercel.app/',
+        externalId: externalId
       })
     });
 
-    const data = await response.json();
+    const contentType = apiResponse.headers.get('content-type');
+    let data;
 
-    if (!response.ok) {
-      console.error('AbacatePay Error:', data);
-      throw new Error(data.message || 'Error creating billing');
+    if (contentType && contentType.includes('application/json')) {
+      data = await apiResponse.json();
+    } else {
+      const text = await apiResponse.text();
+      console.error('Non-JSON response from AbacatePay:', text);
+      throw new Error(`Erro na API (Resposta não-JSON). Verifique os logs da Vercel.`);
     }
 
-    // Return the checkout URL or the PIX data if transparent
-    // AbacatePay v2 returns a checkout url, but we want the PIX data for transparent.
-    // Usually v2 has a "billing" object with "pix" attachment.
-    res.status(200).json(data.data);
+    if (!apiResponse.ok) {
+      console.error('AbacatePay API Error Details:', data);
+      throw new Error(data.error || data.message || `Erro ${apiResponse.status} no AbacatePay`);
+    }
+
+    res.status(200).json(data.data || data);
   } catch (error: any) {
+    console.error('Server Side Error:', error.message);
     res.status(500).json({ message: error.message });
   }
 }
