@@ -1,6 +1,4 @@
-
-
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   const { id } = req.query;
   const apiKey = process.env.ABACATEPAY_API_KEY;
 
@@ -22,10 +20,9 @@ export default async function handler(req: any, res: any) {
       throw new Error(data.message || 'Error checking status');
     }
 
-    // AbacatePay v2 usually returns an array or object in data.data
     const status = data.data?.[0]?.status || data.data?.status;
     res.status(200).json({ status });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 }

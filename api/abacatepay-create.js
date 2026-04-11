@@ -1,6 +1,4 @@
-
-
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
 
   const { amount, customerId, externalId } = req.body;
@@ -58,7 +56,7 @@ export default async function handler(req: any, res: any) {
     }
 
     res.status(200).json(data.data || data);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Server Side Error:', error.message);
     res.status(500).json({ message: error.message });
   }
