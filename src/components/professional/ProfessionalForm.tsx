@@ -447,7 +447,7 @@ export default function ProfessionalForm() {
       <AnimatePresence>
         {showSuccess && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -479,7 +479,7 @@ export default function ProfessionalForm() {
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
-              className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl" 
+              className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl" 
             />
             
             <motion.div
@@ -622,6 +622,25 @@ export default function ProfessionalForm() {
                             className="w-full h-12 bg-slate-100 text-slate-700 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-slate-200 transition-all"
                           >
                             <Copy size={16} /> COPIAR CÓDIGO PIX
+                          </button>
+
+                          <button 
+                            onClick={async () => {
+                              try {
+                                const res = await fetch('/api/simulate', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ id: checkoutData?.id })
+                                });
+                                if (res.ok) alert("Simulação enviada! Aguarde a confirmação automática.");
+                                else alert("Erro na simulação. Verifique se o ID ainda é válido.");
+                              } catch (e) {
+                                alert("Erro ao conectar com a API de simulação.");
+                              }
+                            }}
+                            className="w-full py-2 border border-emerald-500/30 text-emerald-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 transition-all flex items-center justify-center gap-2 mt-2"
+                          >
+                            <Sparkles size={12} /> Simular Sucesso (Teste)
                           </button>
 
                           <div className="flex items-center gap-3 justify-center text-slate-400 text-[10px] font-black tracking-widest">
