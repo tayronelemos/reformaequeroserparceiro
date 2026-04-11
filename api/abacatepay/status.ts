@@ -1,6 +1,6 @@
 
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: any, res: any) {
   const { id } = req.query;
   const apiKey = process.env.ABACATEPAY_API_KEY;
 

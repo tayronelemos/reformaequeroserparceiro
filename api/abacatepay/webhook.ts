@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.VITE_SUPABASE_ANON_KEY!
 );
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
 
   // 1. Basic Security Check (Optional but recommended)
