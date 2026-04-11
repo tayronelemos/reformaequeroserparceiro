@@ -13,6 +13,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ message: 'API Key not configured' });
   }
 
+  // AUDITORIA: Verificar qual chave está sendo usada (seguro)
+  console.log('--- CONFERÊNCIA DE CHAVE ---');
+  console.log('Início da Chave:', apiKey.substring(0, 8) + '...');
+
   try {
     const apiResponse = await fetch('https://api.abacatepay.com/v2/transparents/create', {
       method: 'POST',
