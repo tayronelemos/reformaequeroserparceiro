@@ -13,12 +13,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ message: 'API Key not configured' });
   }
 
-  // AUDITORIA: Verificar qual chave está sendo usada (seguro)
-  console.log('--- CONFERÊNCIA DE CHAVE ---');
-  console.log('Início da Chave:', apiKey.substring(0, 8) + '...');
-
   try {
-    // Deploy Trigger: Using new production keys
     const apiResponse = await fetch('https://api.abacatepay.com/v2/transparents/create', {
       method: 'POST',
       headers: {
@@ -28,7 +23,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         method: 'PIX',
         data: {
-          amount: amount || 500, // Valor em centavos (Teste R$ 5,00)
+          amount: amount || 100, // Valor em centavos (Padrão R$ 1,00 para teste)
           externalId: externalId,
           customer: {
             name: name || "Profissional Reformaê",
@@ -42,31 +37,15 @@ export default async function handler(req, res) {
 
     const data = await apiResponse.json();
     
-    // AUDITORIA: Log completo da resposta do AbacatePay
-    console.log('--- AUDITORIA ABACATEPAY v2 ---');
-    console.log('Payload Bruto:', JSON.stringify(data, null, 2));
-    
     const resultData = data.data || data;
     
-    if (resultData.brCode) {
-      console.log('Dados recebidos:', data);
-      console.log('CHAVE SENDO USADA (INÍCIO):', data.keyPrefix + '****');
-      console.log('CÓDIGO PIX BRUTO (BRCODE):', data.brCode);
-      console.log('Comprimento brCode:', resultData.brCode.length);
-      console.log('Status do PIX:', resultData.status);
-      console.log('Expira em:', resultData.expiresAt);
-    }
-
     if (!apiResponse.ok) {
       console.error('Erro na API AbacatePay:', data);
       const errorMessage = data.error || data.message || 'Erro desconhecido';
       throw new Error(`${errorMessage}`);
     }
 
-    res.status(200).json({
-      ...resultData,
-      keyPrefix: apiKey.substring(0, 4)
-    });
+    res.status(200).json(resultData);
   } catch (error) {
     console.error('Server Side Error:', error.message);
     res.status(500).json({ message: error.message });
