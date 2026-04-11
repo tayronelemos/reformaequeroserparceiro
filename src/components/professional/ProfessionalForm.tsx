@@ -57,6 +57,8 @@ export default function ProfessionalForm() {
   const [paymentStatus, setPaymentStatus] = useState<'IDLE' | 'PENDING' | 'PAID' | 'EXPIRED'>('IDLE');
   const [isGeneratingPix, setIsGeneratingPix] = useState(false);
   const [taxId, setTaxId] = useState('');
+  const [simulationStatus, setSimulationStatus] = useState<'IDLE' | 'SENDING' | 'SUCCESS' | 'ERROR'>('IDLE');
+  const [copied, setCopied] = useState(false);
   const expRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -617,20 +619,26 @@ export default function ProfessionalForm() {
                           <button 
                             onClick={() => {
                               navigator.clipboard.writeText(checkoutData?.brCode || "");
-                              alert("Copiado!");
+                              setCopied(true);
+                              setTimeout(() => setCopied(false), 2000);
                             }}
-                            className="w-full h-12 bg-slate-100 text-slate-700 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-slate-200 transition-all"
+                            className={`w-full h-12 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all ${
+                              copied ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            }`}
                           >
-                            <Copy size={16} /> COPIAR CÓDIGO PIX
+                            {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />} 
+                            {copied ? 'CÓDIGO COPIADO!' : 'COPIAR CÓDIGO PIX'}
                           </button>
 
                           <button 
                             onClick={async () => {
                               if (!checkoutData?.id) {
-                                alert("Não é possível simular: PIX ainda não foi gerado.");
+                                setSimulationStatus('ERROR');
+                                setTimeout(() => setSimulationStatus('IDLE'), 3000);
                                 return;
                               }
 
+                              setSimulationStatus('SENDING');
                               try {
                                 const res = await fetch('/api/simulate', {
                                   method: 'POST',
@@ -639,18 +647,32 @@ export default function ProfessionalForm() {
                                 });
                                 
                                 if (res.ok) {
-                                  alert("Simulação enviada! Aguarde a confirmação automática.");
+                                  setSimulationStatus('SUCCESS');
                                 } else {
-                                  const errorData = await res.json();
-                                  alert(`Erro na simulação: ${errorData.message}`);
+                                  setSimulationStatus('ERROR');
                                 }
                               } catch (e) {
-                                alert("Erro ao conectar com a API de simulação.");
+                                setSimulationStatus('ERROR');
+                              } finally {
+                                setTimeout(() => setSimulationStatus('IDLE'), 4000);
                               }
                             }}
-                            className="w-full py-2 border border-emerald-500/30 text-emerald-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 transition-all flex items-center justify-center gap-2 mt-2"
+                            className={`w-full py-2 border rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 mt-2 ${
+                              simulationStatus === 'SENDING' ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-wait' :
+                              simulationStatus === 'SUCCESS' ? 'bg-emerald-50 border-emerald-500/30 text-emerald-600' :
+                              simulationStatus === 'ERROR' ? 'bg-red-50 border-red-500/30 text-red-600' :
+                              'border-emerald-500/10 text-emerald-600/60 hover:bg-emerald-50 hover:border-emerald-500/30'
+                            }`}
+                            disabled={simulationStatus !== 'IDLE'}
                           >
-                            <Sparkles size={12} /> Simular Sucesso (Teste)
+                            {simulationStatus === 'SENDING' ? <Loader2 className="animate-spin" size={12} /> : 
+                             simulationStatus === 'SUCCESS' ? <CheckCircle2 size={12} /> :
+                             simulationStatus === 'ERROR' ? <XCircle size={12} /> :
+                             <Sparkles size={12} />}
+                            {simulationStatus === 'SENDING' ? 'ENVIANDO SIMULAÇÃO...' : 
+                             simulationStatus === 'SUCCESS' ? 'SIMULAÇÃO ENVIADA COM SUCESSO!' :
+                             simulationStatus === 'ERROR' ? 'ERRO NA SIMULAÇÃO' :
+                             'Simular Sucesso (Teste)'}
                           </button>
 
                           <div className="flex items-center gap-3 justify-center text-slate-400 text-[10px] font-black tracking-widest">
