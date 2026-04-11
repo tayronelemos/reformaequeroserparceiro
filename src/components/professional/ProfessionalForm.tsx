@@ -56,6 +56,7 @@ export default function ProfessionalForm() {
   const [checkoutData, setCheckoutData] = useState<any>(null);
   const [paymentStatus, setPaymentStatus] = useState<'IDLE' | 'PENDING' | 'PAID' | 'EXPIRED'>('IDLE');
   const [isGeneratingPix, setIsGeneratingPix] = useState(false);
+  const [taxId, setTaxId] = useState('');
   const expRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -84,6 +85,19 @@ export default function ProfessionalForm() {
     if (val.length > 2) val = `(${val.slice(0,2)}) ${val.slice(2)}`;
     if (val.length > 9) val = `${val.slice(0,9)}-${val.slice(9)}`;
     setFormData({ ...formData, whatsapp: val });
+  };
+
+  const handleTaxIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.length > 11) val = val.slice(0, 11);
+    
+    // Mask: 000.000.000-00
+    let masked = val;
+    if (val.length > 3) masked = `${val.slice(0, 3)}.${val.slice(3)}`;
+    if (val.length > 6) masked = `${masked.slice(0, 7)}.${masked.slice(7)}`;
+    if (val.length > 9) masked = `${masked.slice(0, 11)}-${masked.slice(11)}`;
+    
+    setTaxId(masked);
   };
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -517,14 +531,36 @@ export default function ProfessionalForm() {
                         </div>
 
                         <div className="flex flex-col gap-3">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Seu CPF (obrigatório para PIX)</label>
+                            <input
+                              type="text"
+                              placeholder="000.000.000-00"
+                              value={taxId}
+                              onChange={handleTaxIdChange}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all outline-none"
+                            />
+                          </div>
+
                           <button
                             onClick={async () => {
+                              if (taxId.replace(/\D/g, '').length < 11) {
+                                alert("Por favor, informe um CPF válido para gerar o PIX.");
+                                return;
+                              }
+                              
                               setIsGeneratingPix(true);
                               try {
                                 const res = await fetch('/api/create', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ amount: 1490, externalId: savedLeadId })
+                                  body: JSON.stringify({ 
+                                    amount: 1490, 
+                                    externalId: savedLeadId,
+                                    taxId: taxId.replace(/\D/g, ''),
+                                    name: `${formData.nome} ${formData.sobrenome}`,
+                                    email: formData.email
+                                  })
                                 });
                                 
                                 const contentType = res.headers.get('content-type');
