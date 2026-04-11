@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Send, CheckCircle2, AlertCircle, X, ChevronRight, HardHat, Zap, Droplets, 
   Paintbrush, Sprout, Home, Hammer, Ruler, GlassWater, Thermometer, UserCog, 
-  MoreHorizontal, ChevronDown, MapPin, Search, Loader2
+  MoreHorizontal, ChevronDown, MapPin, Search, Loader2, Crown, Sparkles, CreditCard,
+  Copy, Check
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -48,8 +49,13 @@ export default function ProfessionalForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showVIPOffer, setShowVIPOffer] = useState(false);
+  const [savedLeadId, setSavedLeadId] = useState<string | null>(null);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [isExpOpen, setIsExpOpen] = useState(false);
+  const [checkoutData, setCheckoutData] = useState<any>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'IDLE' | 'PENDING' | 'PAID' | 'EXPIRED'>('IDLE');
+  const [isGeneratingPix, setIsGeneratingPix] = useState(false);
   const expRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -118,25 +124,25 @@ export default function ProfessionalForm() {
 
     try {
       // 1. Save to Supabase
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profissionais')
         .insert([
           {
             ...formData,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            is_vip: false
           }
-        ]);
+        ])
+        .select();
 
       if (error) throw error;
+      
+      const newLead = data?.[0];
+      if (newLead) setSavedLeadId(newLead.id);
 
       // 2. Success flow
       setIsSubmitting(false);
-      setShowSuccess(true);
-      
-      // Auto-redirect to WhatsApp after 3 seconds
-      setTimeout(() => {
-        window.location.href = 'https://chat.whatsapp.com/GzHPBwmzDLl68O6YTCUkNU?mode=gi_t';
-      }, 3000);
+      setShowVIPOffer(true);
 
     } catch (error) {
       console.error("Erro ao salvar cadastro:", error);
@@ -144,6 +150,39 @@ export default function ProfessionalForm() {
       setIsSubmitting(false);
     }
   };
+
+  // Polling for payment status
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (paymentStatus === 'PENDING' && checkoutData?.id) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/abacatepay/status?id=${checkoutData.id}`);
+          const data = await res.json();
+          if (data.status === 'PAID') {
+            setPaymentStatus('PAID');
+            clearInterval(interval);
+            
+            // 3. Update Supabase to VIP
+            if (savedLeadId) {
+              await supabase
+                .from('profissionais')
+                .update({ is_vip: true, vip_until: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() })
+                .eq('id', savedLeadId);
+            }
+
+            // Redirect to VIP Group after 3s
+            setTimeout(() => {
+              window.location.href = 'https://chat.whatsapp.com/F5tzwGtXAKa9hWU6vE4bwx?mode=gi_t';
+            }, 3000);
+          }
+        } catch (e) {
+          console.error("Polling error", e);
+        }
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [paymentStatus, checkoutData, savedLeadId]);
 
   return (
     <section id="cadastro-profissional" className="py-24 bg-white">
@@ -390,41 +429,183 @@ export default function ProfessionalForm() {
         </div>
       </div>
 
-      {/* Success Modal */}
+      {/* Success Modal (Regular Waitlist) */}
       <AnimatePresence>
         {showSuccess && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="relative bg-white rounded-[3rem] p-10 md:p-12 w-full max-w-[500px] text-center shadow-2xl"
+              className="relative bg-white rounded-[3rem] p-10 md:p-12 w-full max-w-[500px] text-center shadow-2xl overflow-hidden"
             >
               <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
                 <CheckCircle2 size={40} />
               </div>
               <h3 className="text-2xl md:text-3xl font-black text-slate-900 mb-4 tracking-tight">Cadastro realizado!</h3>
               <p className="text-slate-500 font-medium mb-10 leading-relaxed text-lg">
-                Você agora está na lista de espera. <br />
+                Você agora está na lista de espera comum. <br />
                 <span className="text-emerald-600 font-bold">Redirecionando para o WhatsApp...</span>
               </p>
               
               <div className="space-y-4">
                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 3 }}
-                    className="h-full bg-emerald-500"
-                  />
+                  <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 3 }} className="h-full bg-emerald-500" />
                 </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Por favor aguarde</p>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* VIP Offer Overlay */}
+      <AnimatePresence>
+        {showVIPOffer && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl" 
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative bg-white rounded-[3.5rem] w-full max-w-2xl overflow-hidden shadow-2xl my-auto"
+            >
+              {paymentStatus !== 'PAID' ? (
+                <>
+                  {/* Top Bar / Header */}
+                  <div className="bg-primary p-12 text-center text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse" />
+                    <Sparkles className="w-12 h-12 mx-auto mb-6 text-yellow-300 animate-bounce" />
+                    <h3 className="text-3xl md:text-4xl font-black mb-4 tracking-tight leading-tight uppercase">
+                      QUER SAIR NA FRENTE E <br /> SER <span className="text-yellow-300 underline decoration-4 underline-offset-8">LISTA VIP</span>?
+                    </h3>
+                    <p className="text-white/80 font-bold text-lg max-w-md mx-auto">
+                      Garanta sua vaga agora mesmo e ganhe 2 meses grátis de uso do App Reformaê!
+                    </p>
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-8 md:p-12 space-y-8">
+                    {paymentStatus === 'IDLE' ? (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {[
+                            "Veja contatos de clientes na hora",
+                            "Envie orçamentos ilimitados",
+                            "Selo de profissional verificado",
+                            "Entra no Grupo VIP do WhatsApp"
+                          ].map((feat, idx) => (
+                            <div key={idx} className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                              <div className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center flex-shrink-0">
+                                <Check size={14} className="stroke-[3]" />
+                              </div>
+                              <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{feat}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl text-center">
+                          <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Oferta Única de Lançamento</p>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-slate-400 line-through text-lg font-bold">R$ 59,90</span>
+                            <span className="text-4xl font-black text-slate-900 tracking-tighter">R$ 14,90</span>
+                          </div>
+                          <p className="text-[10px] text-amber-600/70 font-bold mt-2 font-black uppercase tracking-widest leading-none">Pagamento único via PIX</p>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                          <button
+                            onClick={async () => {
+                              setIsGeneratingPix(true);
+                              try {
+                                const res = await fetch('/api/abacatepay/create', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ amount: 1490, externalId: savedLeadId })
+                                });
+                                const data = await res.json();
+                                setCheckoutData(data);
+                                setPaymentStatus('PENDING');
+                              } catch (e) {
+                                alert("Erro ao gerar PIX. Tente novamente.");
+                              } finally {
+                                setIsGeneratingPix(false);
+                              }
+                            }}
+                            disabled={isGeneratingPix}
+                            className="w-full h-18 bg-primary text-white font-black text-xl rounded-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 shadow-xl shadow-primary/30"
+                          >
+                            {isGeneratingPix ? <Loader2 className="animate-spin" /> : <><Crown /> QUERO SER VIP AGORA</>}
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              setShowVIPOffer(false);
+                              setShowSuccess(true);
+                              setTimeout(() => {
+                                window.location.href = 'https://chat.whatsapp.com/GzHPBwmzDLl68O6YTCUkNU?mode=gi_t';
+                              }, 3000);
+                            }}
+                            className="text-slate-400 font-bold text-xs uppercase tracking-widest py-4 hover:text-slate-600"
+                          >
+                            Não tenho interesse agora
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center space-y-6 py-4 animate-in fade-in zoom-in duration-500">
+                        <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">Escaneie o QR Code</h4>
+                        
+                        <div className="w-56 h-56 mx-auto bg-slate-50 p-4 rounded-[2rem] border-2 border-primary/20 shadow-inner flex items-center justify-center relative group">
+                          {/* We check where the QR is, AbacatePay v2 uses .pix.qrCode or .checkoutUrl */}
+                          <img src={checkoutData?.metadata?.pix?.qrCodeUrl || checkoutData?.metadata?.pix?.qrCode} alt="PIX" className="w-full h-full rounded-xl" />
+                          <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-[2rem]">
+                            <p className="text-[10px] font-black tracking-widest text-primary">AGUARDANDO PAGAMENTO...</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 max-w-sm mx-auto">
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(checkoutData?.metadata?.pix?.copyAndPaste || "");
+                              alert("Copiado!");
+                            }}
+                            className="w-full h-12 bg-slate-100 text-slate-700 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-slate-200 transition-all"
+                          >
+                            <Copy size={16} /> COPIAR CÓDIGO PIX
+                          </button>
+
+                          <div className="flex items-center gap-3 justify-center text-slate-400 text-[10px] font-black tracking-widest">
+                            <Loader2 className="animate-spin w-4 h-4 text-primary" />
+                            SISTEMA VERIFICANDO PAGAMENTO...
+                          </div>
+                        </div>
+
+                        <button 
+                           onClick={() => setPaymentStatus('IDLE')}
+                           className="text-slate-400 font-bold text-[10px] uppercase tracking-widest underline underline-offset-4"
+                        >
+                           Voltar para o plano normal
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="p-20 text-center space-y-8 animate-in zoom-in duration-500">
+                   <div className="w-24 h-24 bg-yellow-100 text-yellow-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl rotate-12">
+                      <Crown size={48} />
+                   </div>
+                   <div className="space-y-2">
+                      <h3 className="text-4xl font-black text-slate-900 tracking-tight">PARABÉNS, VIP! 💎</h3>
+                      <p className="text-slate-500 font-bold text-lg">Seu pagamento foi confirmado com sucesso.</p>
+                   </div>
+                   <p className="text-xs font-black text-primary uppercase tracking-[0.4em] animate-pulse">Preparamos sua vaga no grupo VIP...</p>
+                </div>
+              )}
             </motion.div>
           </div>
         )}
