@@ -37,11 +37,12 @@ export default async function handler(req, res) {
     const data = await apiResponse.json();
 
     if (!apiResponse.ok) {
-      console.error('AbacatePay v2 Error:', data);
-      throw new Error(data.message || 'Erro ao gerar PIX na v2');
+      console.error('AbacatePay v2 Error Details:', JSON.stringify(data, null, 2));
+      // Captura a mensagem de erro específica do AbacatePay v2
+      const errorMessage = data.error || data.message || (data.errors ? JSON.stringify(data.errors) : 'Erro desconhecido');
+      throw new Error(`${errorMessage}`);
     }
 
-    // A v2 devolve o objeto dentro de data
     res.status(200).json(data.data || data);
   } catch (error) {
     console.error('Server Side Error:', error.message);
