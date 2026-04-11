@@ -48,6 +48,9 @@ export default async function handler(req, res) {
     const resultData = data.data || data;
     
     if (resultData.brCode) {
+      console.log('Dados recebidos:', data);
+      console.log('CHAVE SENDO USADA (INÍCIO):', data.keyPrefix + '****');
+      console.log('CÓDIGO PIX BRUTO (BRCODE):', data.brCode);
       console.log('Comprimento brCode:', resultData.brCode.length);
       console.log('Status do PIX:', resultData.status);
       console.log('Expira em:', resultData.expiresAt);
@@ -59,7 +62,10 @@ export default async function handler(req, res) {
       throw new Error(`${errorMessage}`);
     }
 
-    res.status(200).json(resultData);
+    res.status(200).json({
+      ...resultData,
+      keyPrefix: apiKey.substring(0, 4)
+    });
   } catch (error) {
     console.error('Server Side Error:', error.message);
     res.status(500).json({ message: error.message });
