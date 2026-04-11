@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const apiResponse = await fetch('https://api.abacatepay.com/v1/billing/create', {
+    const apiResponse = await fetch('https://api.abacatepay.com/v1/billing', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29,8 +29,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             unitPrice: amount
           }
         ],
-        returnUrl: 'https://querouserparceiroreformae.vercel.app/',
-        completionUrl: 'https://querouserparceiroreformae.vercel.app/',
+        returnUrl: 'https://queroserparceiroreformae.vercel.app/',
+        completionUrl: 'https://queroserparceiroreformae.vercel.app/',
+        customer: {
+            "name": "Profissional Reformaê",
+            "email": "contato@reformae.com.br",
+            "cellphone": "99999999999",
+            "taxId": "00000000000"
+        },
         externalId: externalId
       })
     });

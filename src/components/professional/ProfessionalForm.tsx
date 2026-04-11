@@ -526,12 +526,20 @@ export default function ProfessionalForm() {
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ amount: 1490, externalId: savedLeadId })
                                 });
-                                const data = await res.json();
-                                if (!res.ok) throw new Error(data.message || 'Erro na API');
-                                setCheckoutData(data);
-                                setPaymentStatus('PENDING');
+                                
+                                const contentType = res.headers.get('content-type');
+                                if (contentType && contentType.includes('application/json')) {
+                                  const data = await res.json();
+                                  if (!res.ok) throw new Error(data.message || 'Erro no servidor');
+                                  setCheckoutData(data);
+                                  setPaymentStatus('PENDING');
+                                } else {
+                                  const errorText = await res.text();
+                                  throw new Error(`Resposta inválida do servidor: ${errorText.slice(0, 100)}`);
+                                }
                               } catch (e: any) {
-                                alert(`Erro ao gerar PIX: ${e.message}. Verifique se a API Key está configurada na Vercel.`);
+                                console.error("Erro PIX:", e);
+                                alert(`Atenção: ${e.message}`);
                               } finally {
                                 setIsGeneratingPix(false);
                               }
