@@ -525,8 +525,8 @@ export default function ProfessionalForm() {
                         <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl text-center">
                           <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Oferta de Lançamento</p>
                           <div className="flex items-baseline gap-2 justify-center">
-                            <span className="text-gray-400 line-through text-sm font-bold">R$ 59,90</span>
-                            <span className="text-3xl font-black text-slate-900 tracking-tighter">R$ 1,00</span>
+                            <span className="text-gray-400 line-through text-sm font-bold">R$ 89,90</span>
+                            <span className="text-3xl font-black text-slate-900 tracking-tighter">R$ 16,90</span>
                           </div>
                           <p className="text-[9px] text-amber-600/70 font-bold mt-1 font-black uppercase tracking-widest leading-none">Pagamento único via PIX</p>
                         </div>
@@ -556,7 +556,7 @@ export default function ProfessionalForm() {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ 
-                                      amount: 100, 
+                                      amount: 1690, 
                                       externalId: savedLeadId,
                                       taxId: taxId.replace(/\D/g, ''),
                                       name: `${formData.nome} ${formData.sobrenome}`,
