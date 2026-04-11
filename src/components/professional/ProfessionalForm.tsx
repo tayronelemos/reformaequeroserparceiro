@@ -157,7 +157,7 @@ export default function ProfessionalForm() {
     if (paymentStatus === 'PENDING' && checkoutData?.id) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`/api/abacatepay-status?id=${checkoutData.id}`);
+          const res = await fetch(`/api/status?id=${checkoutData.id}`);
           const data = await res.json();
           if (data.status === 'PAID') {
             setPaymentStatus('PAID');
@@ -521,7 +521,7 @@ export default function ProfessionalForm() {
                             onClick={async () => {
                               setIsGeneratingPix(true);
                               try {
-                                const res = await fetch('/api/abacatepay-create', {
+                                const res = await fetch('/api/create', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ amount: 1490, externalId: savedLeadId })
