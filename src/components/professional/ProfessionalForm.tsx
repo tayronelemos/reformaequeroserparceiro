@@ -607,7 +607,7 @@ export default function ProfessionalForm() {
                         
                         <div className="w-56 h-56 mx-auto bg-slate-50 p-4 rounded-[2rem] border-2 border-primary/20 shadow-inner flex items-center justify-center relative group">
                           {/* We check where the QR is, AbacatePay v2 uses .pix.qrCode or .checkoutUrl */}
-                          <img src={checkoutData?.metadata?.pix?.qrCodeUrl || checkoutData?.metadata?.pix?.qrCode} alt="PIX" className="w-full h-full rounded-xl" />
+                          <img src={checkoutData?.brCodeBase64} alt="PIX" className="w-full h-full rounded-xl" />
                           <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-[2rem]">
                             <p className="text-[10px] font-black tracking-widest text-primary">AGUARDANDO PAGAMENTO...</p>
                           </div>
@@ -616,7 +616,7 @@ export default function ProfessionalForm() {
                         <div className="space-y-4 max-w-sm mx-auto">
                           <button 
                             onClick={() => {
-                              navigator.clipboard.writeText(checkoutData?.metadata?.pix?.copyAndPaste || "");
+                              navigator.clipboard.writeText(checkoutData?.brCode || "");
                               alert("Copiado!");
                             }}
                             className="w-full h-12 bg-slate-100 text-slate-700 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-slate-200 transition-all"
