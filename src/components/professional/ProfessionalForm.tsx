@@ -573,6 +573,7 @@ export default function ProfessionalForm() {
                                   // AUDITORIA: Log no console do navegador
                                   console.log('--- AUDITORIA PIX FRONTEND ---');
                                   console.log('Dados recebidos:', data);
+                                  console.log('CHAVE EM USO (INÍCIO):', data.keyPrefix + '****');
                                   console.log('CÓDIGO PIX BRUTO (BRCODE):', data.brCode);
                                   console.log('EXPIRA EM:', data.expiresAt);
                                   
