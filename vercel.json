@@ -1,20 +1,12 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/abacatepay-create",
-      "destination": "/api/abacatepay-create"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     },
     {
-      "source": "/api/abacatepay-status",
-      "destination": "/api/abacatepay-status"
-    },
-    {
-      "source": "/api/abacatepay-webhook",
-      "destination": "/api/abacatepay-webhook"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
