@@ -626,14 +626,24 @@ export default function ProfessionalForm() {
 
                           <button 
                             onClick={async () => {
+                              if (!checkoutData?.id) {
+                                alert("Não é possível simular: PIX ainda não foi gerado.");
+                                return;
+                              }
+
                               try {
                                 const res = await fetch('/api/simulate', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ id: checkoutData?.id })
+                                  body: JSON.stringify({ id: checkoutData.id })
                                 });
-                                if (res.ok) alert("Simulação enviada! Aguarde a confirmação automática.");
-                                else alert("Erro na simulação. Verifique se o ID ainda é válido.");
+                                
+                                if (res.ok) {
+                                  alert("Simulação enviada! Aguarde a confirmação automática.");
+                                } else {
+                                  const errorData = await res.json();
+                                  alert(`Erro na simulação: ${errorData.message}`);
+                                }
                               } catch (e) {
                                 alert("Erro ao conectar com a API de simulação.");
                               }
