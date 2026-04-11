@@ -36,15 +36,26 @@ export default async function handler(req, res) {
     });
 
     const data = await apiResponse.json();
+    
+    // AUDITORIA: Log completo da resposta do AbacatePay
+    console.log('--- AUDITORIA ABACATEPAY v2 ---');
+    console.log('Payload Bruto:', JSON.stringify(data, null, 2));
+    
+    const resultData = data.data || data;
+    
+    if (resultData.brCode) {
+      console.log('Comprimento brCode:', resultData.brCode.length);
+      console.log('Status do PIX:', resultData.status);
+      console.log('Expira em:', resultData.expiresAt);
+    }
 
     if (!apiResponse.ok) {
-      console.error('AbacatePay v2 Error Details:', JSON.stringify(data, null, 2));
-      // Captura a mensagem de erro específica do AbacatePay v2
-      const errorMessage = data.error || data.message || (data.errors ? JSON.stringify(data.errors) : 'Erro desconhecido');
+      console.error('Erro na API AbacatePay:', data);
+      const errorMessage = data.error || data.message || 'Erro desconhecido';
       throw new Error(`${errorMessage}`);
     }
 
-    res.status(200).json(data.data || data);
+    res.status(200).json(resultData);
   } catch (error) {
     console.error('Server Side Error:', error.message);
     res.status(500).json({ message: error.message });
