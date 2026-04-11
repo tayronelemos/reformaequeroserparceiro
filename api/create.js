@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         method: 'PIX',
         data: {
-          amount: amount || 200, // Valor em centavos (Teste R$ 2,00)
+          amount: amount || 500, // Valor em centavos (Teste R$ 5,00)
           externalId: externalId,
           customer: {
             name: name || "Profissional Reformaê",
