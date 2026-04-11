@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Instagram, Facebook, Linkedin, Mail, Sparkles, MessageCircle, ChevronDown } from 'lucide-react';
+import { ArrowRight, Instagram, Facebook, Linkedin, Mail, Sparkles, MessageCircle, ChevronDown, Menu, X } from 'lucide-react';
 import logoClaro from '../assets/images/logo-claro.png';
 import logoCriativos from '../assets/images/criativosbrasil.png';
 
@@ -135,6 +135,19 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const targetId = href.replace('#', '');
+    const element = document.getElementById(targetId);
+    if (element) {
+      setIsMobileMenuOpen(false);
+      // Pequeno timeout para garantir que o menu comece a fechar antes do scroll
+      setTimeout(() => {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
   const menuItems = [
     { label: 'Home', href: '#home' },
     { label: 'O App', href: '#app-experience' },
@@ -206,10 +219,12 @@ export function Navbar() {
             
             {/* Mobile Menu Toggle */}
             <button 
+              type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl text-slate-900"
+              className="lg:hidden w-12 h-12 flex items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-900 transition-colors z-[60]"
+              aria-label="Menu"
             >
-              {isMobileMenuOpen ? <span className="text-xl font-bold">✕</span> : <span className="text-xl font-bold">☰</span>}
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
@@ -228,8 +243,8 @@ export function Navbar() {
                   <div key={item.label}>
                     <a 
                       href={item.href || '#'} 
-                      onClick={() => !item.dropdown && setIsMobileMenuOpen(false)}
-                      className="flex items-center justify-between text-xs font-black uppercase tracking-[0.2em] text-slate-900 py-2"
+                      onClick={(e) => handleNavClick(e, item.href)}
+                      className="flex items-center justify-between text-xs font-black uppercase tracking-[0.2em] text-slate-900 py-2 cursor-pointer"
                     >
                       {item.label}
                     </a>
