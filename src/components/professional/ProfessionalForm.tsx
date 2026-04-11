@@ -552,18 +552,18 @@ export default function ProfessionalForm() {
                               
                               setIsGeneratingPix(true);
                               try {
-                                const res = await fetch('/api/create', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ 
-                                    amount: 500, 
-                                    externalId: savedLeadId,
-                                    taxId: taxId.replace(/\D/g, ''),
-                                    name: `${formData.nome} ${formData.sobrenome}`,
-                                    email: formData.email,
-                                    cellphone: formData.whatsapp.replace(/\D/g, '')
-                                  })
-                                });
+                                  const res = await fetch('/api/create', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                      amount: 100, 
+                                      externalId: savedLeadId,
+                                      taxId: taxId.replace(/\D/g, ''),
+                                      name: `${formData.nome} ${formData.sobrenome}`,
+                                      email: formData.email,
+                                      cellphone: formData.whatsapp.replace(/\D/g, '')
+                                    })
+                                  });
                                 
                                 const contentType = res.headers.get('content-type');
                                 if (contentType && contentType.includes('application/json')) {
