@@ -7,22 +7,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Conforme print da documentação: POST /v2/transparents/simulate
-    const response = await fetch(`https://api.abacatepay.com/v2/transparents/simulate`, {
+    // Conforme print: POST /v2/transparents/simulate
+    // Tentamos passar o ID na query e no body para garantir
+    const response = await fetch(`https://api.abacatepay.com/v2/transparents/simulate?id=${id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        id: id // Passamos o ID do PIX gerado
+        id: id,
+        metadata: {}
       })
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Simulation Error:', data);
+      console.error('Simulation Error Details:', data);
       throw new Error(data.message || 'Erro ao simular pagamento');
     }
 
