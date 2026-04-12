@@ -594,7 +594,7 @@ export default function ProfessionalForm() {
                               setShowVIPOffer(false);
                               setShowSuccess(true);
                               setTimeout(() => {
-                                window.location.href = 'https://chat.whatsapp.com/GzHPBwmzDLl68O6YTCUkNU?mode=gi_t';
+                                window.location.href = 'https://chat.whatsapp.com/Dj4MdEFoAvTAoPe4FNc46o?mode=gi_t';
                               }, 3000);
                             }}
                             className="text-slate-400 font-bold text-[10px] uppercase tracking-widest py-2 hover:text-slate-600"
