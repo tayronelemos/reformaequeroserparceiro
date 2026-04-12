@@ -40,21 +40,29 @@ export default async function handler(req, res) {
     if (eventType === 'transparent.completed' && transparentData?.status === 'PAID') {
       console.log(`Processing VIP upgrade. ExternalId: ${externalId}, Email: ${customerEmail}`);
       
-      let query = supabase.from('profissionais').update({ is_vip: true });
+      let query = supabase.from('profissionais').update({ 
+        is_vip: true,
+        vip_until: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days
+      });
 
       if (externalId) {
         query = query.eq('id', externalId);
       } else if (customerEmail) {
-        // Se o externalId falhar, buscamos pelo e-mail do formulário
-        query = query.eq('email', customerEmail);
+        // Buscamos pelo e-mail ignorando case
+        query = query.ilike('email', customerEmail);
       } else {
         throw new Error('No identifier (externalId or email) found in webhook payload');
       }
 
-      const { error } = await query;
+      const { data: updateData, error } = await query.select();
 
       if (error) throw error;
-      console.log('VIP status updated successfully via Webhook');
+      
+      if (!updateData || updateData.length === 0) {
+        console.warn(`No professional found with Id: ${externalId} or Email: ${customerEmail}`);
+      } else {
+        console.log('VIP status updated successfully via Webhook for:', updateData[0].email);
+      }
     }
 
     res.status(200).json({ received: true });
