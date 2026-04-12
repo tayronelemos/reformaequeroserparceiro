@@ -323,6 +323,31 @@ export default function AdminDashboard() {
     link.click();
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedLeads.length === 0) return;
+    
+    if (confirm(`Tem certeza que deseja excluir ${selectedLeads.length} profissionais selecionados? Esta ação não pode ser desfeita.`)) {
+      setLoading(true);
+      try {
+        const { error } = await supabase
+          .from('profissionais')
+          .delete()
+          .in('id', selectedLeads);
+
+        if (error) throw error;
+
+        setLeads(prev => prev.filter(l => !selectedLeads.includes(l.id)));
+        setSelectedLeads([]);
+        alert('Profissionais excluídos com sucesso! 🗑️');
+      } catch (err) {
+        console.error('Erro ao excluir:', err);
+        alert('Houve um erro ao excluir os registros. Por favor, tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const toggleLeadSelection = (id: string) => {
     setSelectedLeads(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
@@ -823,14 +848,27 @@ export default function AdminDashboard() {
                       <div className="w-px h-6 bg-primary/20" />
                       <button 
                         onClick={exportCSV}
-                        className="text-xs font-bold text-slate-600 hover:text-primary flex items-center gap-2"
+                        className="text-xs font-bold text-slate-600 hover:text-primary transition-colors flex items-center gap-2"
                       >
                         <Download size={14} />
                         Exportar selecionados
                       </button>
+                      
+                      <div className="w-px h-6 bg-primary/20" />
+
+                      <button 
+                        onClick={handleBulkDelete}
+                        className="text-xs font-bold text-slate-600 hover:text-red-500 transition-colors flex items-center gap-2"
+                      >
+                        <Trash2 size={14} />
+                        Excluir selecionados
+                      </button>
+
+                      <div className="w-px h-6 bg-primary/20" />
+
                       <button 
                         onClick={() => setSelectedLeads([])}
-                        className="text-xs font-bold text-slate-600 hover:text-red-500 flex items-center gap-2"
+                        className="text-xs font-bold text-slate-600 hover:text-primary flex items-center gap-2"
                       >
                         <X size={14} />
                         Limpar seleção
