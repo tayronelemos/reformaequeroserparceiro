@@ -4,7 +4,7 @@ import {
   Send, CheckCircle2, AlertCircle, X, ChevronRight, HardHat, Zap, Droplets, 
   Paintbrush, Sprout, Home, Hammer, Ruler, GlassWater, Thermometer, UserCog, 
   MoreHorizontal, ChevronDown, MapPin, Search, Loader2, Crown, Sparkles, CreditCard,
-  Copy, Check
+  Copy, Check, Sofa, Bug, Waves, Baby
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -20,6 +20,10 @@ const categories = [
   { id: 'vidraceiro', label: 'Vidraceiro', icon: GlassWater },
   { id: 'ar-condicionado', label: 'Técnico em Ar-condicionado', icon: Thermometer },
   { id: 'pos-obra', label: 'Limpeza pós-obra', icon: UserCog },
+  { id: 'montador', label: 'Montador de móveis', icon: Sofa },
+  { id: 'dedetizacao', label: 'Dedetização', icon: Bug },
+  { id: 'piscineiro', label: 'Piscineiro', icon: Waves },
+  { id: 'baba', label: 'Babá', icon: Baby },
   { id: 'outros', label: 'Outros', icon: MoreHorizontal },
 ];
 
