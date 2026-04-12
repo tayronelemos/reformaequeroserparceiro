@@ -188,7 +188,7 @@ export default function ProfessionalForm() {
 
             // Redirect to VIP Group after 3s
             setTimeout(() => {
-              window.location.href = 'https://chat.whatsapp.com/F5tzwGtXAKa9hWU6vE4bwx?mode=gi_t';
+              window.location.href = 'https://chat.whatsapp.com/Ktz1yQSDWba91dHzRayhjs?mode=gi_t';
             }, 3000);
           }
         } catch (e) {
