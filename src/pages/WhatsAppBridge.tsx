@@ -128,16 +128,12 @@ export default function WhatsAppBridge() {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-16 bg-slate-900 text-white font-black rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 flex items-center justify-center relative group overflow-hidden"
+                className="w-full h-16 bg-slate-900 text-white font-black rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 flex items-center justify-center group overflow-hidden"
               >
                 {loading ? (
                   <Loader2 className="animate-spin" />
                 ) : (
-                  <>
-                    <MessageSquare size={20} className="absolute left-6" />
-                    <span className="text-sm tracking-widest">ENTRAR NO GRUPO AGORA</span>
-                    <ChevronRight size={18} className="absolute right-6 group-hover:translate-x-1 transition-transform" />
-                  </>
+                  <span className="text-sm tracking-widest uppercase">Entrar no Grupo Agora</span>
                 )}
               </button>
 

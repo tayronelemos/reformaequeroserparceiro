@@ -92,9 +92,7 @@ export default function Hero() {
                   onClick={() => window.location.href = '/convite'}
                   className="w-full sm:w-auto h-16 px-10 bg-white text-slate-900 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center relative active:scale-95 overflow-hidden"
                 >
-                  <MessageSquare size={20} className="absolute left-6 text-emerald-500" />
-                  <span className="mx-auto">Entrar no Grupo</span>
-                  <div className="w-5 absolute right-6" />
+                  <span className="mx-auto uppercase text-xs tracking-widest">Entrar no Grupo</span>
                 </button>
               </div>
 
