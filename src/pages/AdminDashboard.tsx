@@ -329,19 +329,25 @@ export default function AdminDashboard() {
     if (confirm(`Tem certeza que deseja excluir ${selectedLeads.length} profissionais selecionados? Esta ação não pode ser desfeita.`)) {
       setLoading(true);
       try {
-        const { error } = await supabase
+        console.log('Tentando excluir IDs:', selectedLeads);
+        const { data, error, count } = await supabase
           .from('profissionais')
           .delete()
           .in('id', selectedLeads);
 
-        if (error) throw error;
+        if (error) {
+           console.error('Supabase Delete Error:', error);
+           throw error;
+        }
 
+        // Supabase delete with .in() doesn't always return the deleted rows in 'data' 
+        // depending on configuration, so we trust the lack of error.
         setLeads(prev => prev.filter(l => !selectedLeads.includes(l.id)));
         setSelectedLeads([]);
-        alert('Profissionais excluídos com sucesso! 🗑️');
-      } catch (err) {
-        console.error('Erro ao excluir:', err);
-        alert('Houve um erro ao excluir os registros. Por favor, tente novamente.');
+        alert('Profissionais excluídos com sucesso do banco de dados! 🗑️');
+      } catch (err: any) {
+        console.error('Erro fatal ao excluir:', err);
+        alert(`Erro Crítico no Banco de Dados: ${err.message || 'Erro desconhecido'}`);
       } finally {
         setLoading(false);
       }
@@ -1046,11 +1052,21 @@ export default function AdminDashboard() {
             lead={selectedLead} 
             onClose={() => setSelectedLead(null)} 
             onDelete={async () => {
-              if (confirm('Tem certeza que deseja excluir este lead?')) {
-                const { error } = await supabase.from('profissionais').delete().eq('id', selectedLead.id);
-                if (!error) {
+              if (confirm('Tem certeza que deseja excluir este lead individualmente? Esta ação é irreversível.')) {
+                setLoading(true);
+                try {
+                  const { error } = await supabase.from('profissionais').delete().eq('id', selectedLead.id);
+                  if (error) {
+                    throw error;
+                  }
                   setLeads(prev => prev.filter(l => l.id !== selectedLead.id));
                   setSelectedLead(null);
+                  alert('Profissional excluído com sucesso! ✅');
+                } catch (err: any) {
+                  console.error('Erro ao excluir profissional:', err);
+                  alert(`Erro ao excluir: ${err.message || 'Verifique suas permissões no Supabase.'}`);
+                } finally {
+                  setLoading(false);
                 }
               }
             }}

@@ -74,6 +74,9 @@ export default function App() {
       case '/admin/profissionais':
       case '/admin/profissionais/':
         return <AdminDashboard />;
+      case '/convite':
+      case '/convite/':
+        return <WhatsAppBridge />;
       default:
         return <Home />;
     }
