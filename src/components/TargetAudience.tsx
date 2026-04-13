@@ -59,7 +59,7 @@ export default function TargetAudience() {
               </p>
               <button 
                 onClick={() => document.getElementById('lead-form')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-full py-5 px-8 bg-white text-primary font-black rounded-2xl hover:bg-slate-50 transition-all shadow-2xl relative z-10 active:scale-95"
+                className="w-full h-16 px-8 bg-white text-primary font-black rounded-2xl hover:bg-slate-50 transition-all shadow-2xl relative z-10 active:scale-95 flex items-center justify-center gap-2"
               >
                 Quero ser parceiro agora
               </button>

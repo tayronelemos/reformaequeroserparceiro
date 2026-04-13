@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Phone, User, ChevronRight, Loader2, CheckCircle2, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import logoClaro from '../assets/images/logo-claro.png';
+import logoDark from '../assets/images/logo-dark.png';
 
 export default function WhatsAppBridge() {
   const [formData, setFormData] = useState({ nome: '', whatsapp: '' });
@@ -69,7 +69,7 @@ export default function WhatsAppBridge() {
         className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-10">
-          <img src={logoClaro} alt="Reformaê" className="h-10 mx-auto mb-6" />
+          <img src={logoDark} alt="Reformaê" className="h-10 mx-auto mb-6" />
           <h1 className="text-2xl font-black text-white tracking-tight uppercase">Convite para o Grupo</h1>
           <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-2">Profissionais de João Pessoa</p>
         </div>
