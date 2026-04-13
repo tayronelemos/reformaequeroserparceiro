@@ -83,17 +83,18 @@ export default function Hero() {
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 xl:gap-6 w-full max-w-md mx-auto lg:mx-0">
                 <button 
                   onClick={scrollToForm}
-                  className="w-full sm:w-auto h-16 px-10 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-3 group shadow-lg shadow-primary/20 active:scale-95"
+                  className="w-full sm:w-auto h-16 px-10 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center relative group shadow-lg shadow-primary/20 active:scale-95 overflow-hidden"
                 >
-                  Garantir minha parceria
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <span className="relative z-10 transition-transform group-hover:-translate-x-3">Garantir minha parceria</span>
+                  <ArrowRight className="w-5 h-5 absolute right-6 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-4 transition-all" />
                 </button>
                 <button 
                   onClick={() => window.location.href = '/convite'}
-                  className="w-full sm:w-auto h-16 px-10 bg-white text-slate-900 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95"
+                  className="w-full sm:w-auto h-16 px-10 bg-white text-slate-900 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center relative active:scale-95 overflow-hidden"
                 >
-                  <MessageSquare size={20} className="text-emerald-500" />
-                  Entrar no Grupo
+                  <MessageSquare size={20} className="absolute left-6 text-emerald-500" />
+                  <span className="mx-auto">Entrar no Grupo</span>
+                  <div className="w-5 absolute right-6" />
                 </button>
               </div>
 

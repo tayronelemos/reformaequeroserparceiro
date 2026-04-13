@@ -37,10 +37,10 @@ export function FinalCTA() {
             </p>
             <button 
               onClick={scrollToForm}
-              className="w-full sm:w-auto h-16 px-12 bg-white text-slate-900 font-black text-lg rounded-[2rem] shadow-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3 mx-auto group active:scale-95"
+              className="w-full sm:w-auto h-16 px-12 bg-white text-slate-900 font-black text-lg rounded-[2rem] shadow-2xl hover:bg-slate-50 transition-all flex items-center justify-center relative mx-auto group active:scale-95 overflow-hidden"
             >
-              Garantir minha exclusividade
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              <span className="relative z-10 transition-transform group-hover:-translate-x-3">Garantir minha exclusividade</span>
+              <ArrowRight className="w-6 h-6 absolute right-8 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-4 transition-all" />
             </button>
           </motion.div>
         </div>
