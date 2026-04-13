@@ -330,21 +330,26 @@ export default function AdminDashboard() {
       setLoading(true);
       try {
         console.log('Tentando excluir IDs:', selectedLeads);
-        const { data, error, count } = await supabase
+        const { data, error } = await supabase
           .from('profissionais')
           .delete()
-          .in('id', selectedLeads);
+          .in('id', selectedLeads)
+          .select();
 
         if (error) {
            console.error('Supabase Delete Error:', error);
            throw error;
         }
 
-        // Supabase delete with .in() doesn't always return the deleted rows in 'data' 
-        // depending on configuration, so we trust the lack of error.
+        // Se data estiver vazio, significa que o banco não deletou nada (provavelmente erro de Permissão RLS)
+        if (!data || data.length === 0) {
+          alert('Atenção: O banco de dados recusou a exclusão. Isso geralmente acontece quando o Supabase não tem uma política de "DELETE" liberada para o usuário anônimo. Verifique as configurações de RLS no seu painel Supabase.');
+          return;
+        }
+
         setLeads(prev => prev.filter(l => !selectedLeads.includes(l.id)));
         setSelectedLeads([]);
-        alert('Profissionais excluídos com sucesso do banco de dados! 🗑️');
+        alert(`Sucesso! ${data.length} profissionais foram removidos definitivamente do banco de dados. 🗑️`);
       } catch (err: any) {
         console.error('Erro fatal ao excluir:', err);
         alert(`Erro Crítico no Banco de Dados: ${err.message || 'Erro desconhecido'}`);
@@ -1055,10 +1060,21 @@ export default function AdminDashboard() {
               if (confirm('Tem certeza que deseja excluir este lead individualmente? Esta ação é irreversível.')) {
                 setLoading(true);
                 try {
-                  const { error } = await supabase.from('profissionais').delete().eq('id', selectedLead.id);
+                  const { data, error } = await supabase
+                    .from('profissionais')
+                    .delete()
+                    .eq('id', selectedLead.id)
+                    .select();
+
                   if (error) {
                     throw error;
                   }
+
+                  if (!data || data.length === 0) {
+                    alert('Erro de Permissão: O registro não foi removido do banco de dados. Verifique as Políticas de RLS (DELETE) no seu painel do Supabase.');
+                    return;
+                  }
+
                   setLeads(prev => prev.filter(l => l.id !== selectedLead.id));
                   setSelectedLead(null);
                   alert('Profissional excluído com sucesso! ✅');

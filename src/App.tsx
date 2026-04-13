@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import Home from './pages/Home';
 import ProfessionalLanding from './pages/ProfessionalLanding';
 import AdminDashboard from './pages/AdminDashboard';
+import WhatsAppBridge from './pages/WhatsAppBridge';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
