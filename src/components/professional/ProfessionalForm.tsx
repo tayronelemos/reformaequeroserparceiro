@@ -34,7 +34,7 @@ const experienceOptions = [
   "Mais de 5 anos"
 ];
 
-const GROSS_AMOUNT = 16.90;
+const GROSS_AMOUNT = 49.90;
 const GATEWAY_FEE = 0.80;
 
 export default function ProfessionalForm() {
@@ -552,10 +552,6 @@ export default function ProfessionalForm() {
                         <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl text-center">
                           <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Oferta de Lançamento</p>
                           <div className="flex items-baseline gap-2 justify-center">
-                            <span className="text-gray-400 line-through text-sm font-bold">R$ 89,90</span>
-                            {discountAmount > 0 && (
-                              <span className="text-gray-400 line-through text-sm font-bold">R$ {GROSS_AMOUNT.toFixed(2).replace('.', ',')}</span>
-                            )}
                             <span className="text-3xl font-black text-slate-900 tracking-tighter">
                               R$ {finalAmount.toFixed(2).replace('.', ',')}
                             </span>
