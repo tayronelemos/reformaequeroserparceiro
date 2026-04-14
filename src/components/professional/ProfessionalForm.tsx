@@ -569,9 +569,9 @@ export default function ProfessionalForm() {
                         </div>
 
                         {/* ─── COUPON FIELD ─── */}
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 px-1">
-                            <Tag size={10} />
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                            <Tag size={12} className="text-primary" />
                             Tem um cupom de parceiro?
                           </label>
                           <div className="flex gap-2">
@@ -588,19 +588,19 @@ export default function ProfessionalForm() {
                               }}
                               onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
                               disabled={couponStatus === 'valid'}
-                              className={`flex-1 h-11 px-4 rounded-xl border text-sm font-bold outline-none transition-all ${
+                              className={`flex-1 h-12 px-4 rounded-xl border text-sm font-bold outline-none transition-all ${
                                 couponStatus === 'valid'
                                   ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
                                   : couponStatus === 'invalid'
                                   ? 'border-red-300 bg-red-50 text-red-700'
-                                  : 'border-slate-200 bg-white text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/10'
+                                  : 'border-slate-300 bg-white text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/10'
                               }`}
                             />
                             <button
                               type="button"
                               onClick={handleApplyCoupon}
                               disabled={couponStatus === 'loading' || couponStatus === 'valid' || !couponCode.trim()}
-                              className="h-11 px-4 bg-slate-900 text-white text-xs font-black rounded-xl hover:bg-slate-700 transition-all disabled:opacity-40 flex items-center gap-1.5 whitespace-nowrap"
+                              className="h-12 px-6 bg-slate-900 text-white text-xs font-black rounded-xl hover:bg-slate-700 transition-all disabled:opacity-40 flex items-center gap-1.5 whitespace-nowrap shadow-sm"
                             >
                               {couponStatus === 'loading' ? <Loader2 size={14} className="animate-spin" /> : 'Aplicar'}
                             </button>
@@ -610,14 +610,14 @@ export default function ProfessionalForm() {
                           <AnimatePresence>
                             {couponStatus === 'valid' && (
                               <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-                                className="flex items-center gap-2 text-emerald-600 text-[10px] font-black uppercase tracking-widest px-1">
+                                className="flex items-center gap-2 text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-emerald-100/50 p-2 rounded-lg border border-emerald-200">
                                 <CheckCircle2 size={12} />
                                 {couponMessage}
                               </motion.div>
                             )}
                             {couponStatus === 'invalid' && (
                               <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-                                className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest px-1">
+                                className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest bg-red-100/50 p-2 rounded-lg border border-red-200">
                                 <AlertCircle size={12} />
                                 {couponMessage}
                               </motion.div>
