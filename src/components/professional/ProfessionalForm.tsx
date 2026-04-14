@@ -719,11 +719,9 @@ export default function ProfessionalForm() {
                             {copied ? 'CÓDIGO COPIADO!' : 'COPIAR CÓDIGO PIX'}
                           </button>
 
-                          {/* ─── Taxa AbacatePay ─── */}
+                          {/* ─── Valor do Plano ─── */}
                           <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-100">
                             <span>Valor: <strong className="text-slate-600">R${finalAmount.toFixed(2).replace('.', ',')}</strong></span>
-                            <span className="text-slate-300">|</span>
-                            <span>Taxa: <strong className="text-slate-600">R$0,80</strong> (AbacatePay)</span>
                           </div>
 
                           <div className="flex items-center gap-2 justify-center text-slate-400 text-[10px] font-black tracking-widest">
