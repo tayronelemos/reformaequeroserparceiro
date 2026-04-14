@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, 
+  Tag,
+  HandCoins,
+  Link2,
   UserPlus, 
   Briefcase, 
   Globe, 
@@ -71,6 +74,17 @@ interface Lead {
 
 export default function AdminDashboard() {
   const [activeView, setActiveView] = useState('dashboard');
+  const [partners, setPartners] = useState<any[]>([]);
+  const [partnerOrders, setPartnerOrders] = useState<any[]>([]);
+  const [partnerCommissions, setPartnerCommissions] = useState<any[]>([]);
+  const [showNewPartnerModal, setShowNewPartnerModal] = useState(false);
+  const [newPartner, setNewPartner] = useState({ name: '', email: '', whatsapp: '', slug: '', commission_pct: 50 });
+  const [showNewCouponModal, setShowNewCouponModal] = useState(false);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const [newCoupon, setNewCoupon] = useState({ code: '', discount_type: 'none', discount_value: 0, max_uses: '', partner_id: '' });
+  const [savingPartner, setSavingPartner] = useState(false);
+  const [savingCoupon, setSavingCoupon] = useState(false);
+  const [partnerClicks, setPartnerClicks] = useState<any[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -202,8 +216,87 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isLoggedIn) {
       fetchLeads();
+      fetchPartners();
     }
   }, [isLoggedIn]);
+
+  const fetchPartners = async () => {
+    try {
+      const [{ data: parts }, { data: orders }, { data: comms }, { data: clicks }] = await Promise.all([
+        supabase.from('partners').select('*, partner_coupons(*)').order('created_at', { ascending: false }),
+        supabase.from('vip_orders').select('*').order('created_at', { ascending: false }),
+        supabase.from('partner_commissions').select('*').order('created_at', { ascending: false }),
+        supabase.from('partner_clicks').select('partner_id')
+      ]);
+      setPartners(parts || []);
+      setPartnerOrders(orders || []);
+      setPartnerCommissions(comms || []);
+      setPartnerClicks(clicks || []);
+    } catch (err) {
+      console.error('Erro ao buscar parceiros:', err);
+    }
+  };
+
+  const handleCreatePartner = async () => {
+    if (!newPartner.name || !newPartner.email || !newPartner.slug) return;
+    setSavingPartner(true);
+    try {
+      const { error } = await supabase.from('partners').insert([{
+        name: newPartner.name,
+        email: newPartner.email,
+        whatsapp: newPartner.whatsapp,
+        slug: newPartner.slug.toLowerCase().replace(/\s+/g, '-'),
+        commission_pct: newPartner.commission_pct,
+        is_active: true
+      }]);
+      if (error) throw error;
+      setNewPartner({ name: '', email: '', whatsapp: '', slug: '', commission_pct: 50 });
+      setShowNewPartnerModal(false);
+      await fetchPartners();
+    } catch (err: any) {
+      alert('Erro ao criar parceiro: ' + err.message);
+    } finally {
+      setSavingPartner(false);
+    }
+  };
+
+  const handleCreateCoupon = async () => {
+    if (!newCoupon.code || !newCoupon.partner_id) return;
+    setSavingCoupon(true);
+    try {
+      const { error } = await supabase.from('partner_coupons').insert([{
+        partner_id: newCoupon.partner_id,
+        code: newCoupon.code.toUpperCase(),
+        discount_type: newCoupon.discount_type,
+        discount_value: newCoupon.discount_value,
+        max_uses: newCoupon.max_uses ? parseInt(newCoupon.max_uses) : null,
+        is_active: true
+      }]);
+      if (error) throw error;
+      setNewCoupon({ code: '', discount_type: 'none', discount_value: 0, max_uses: '', partner_id: '' });
+      setShowNewCouponModal(false);
+      await fetchPartners();
+    } catch (err: any) {
+      alert('Erro ao criar cupom: ' + err.message);
+    } finally {
+      setSavingCoupon(false);
+    }
+  };
+
+  const handleMarkCommissionPaid = async (partnerId: string) => {
+    if (!confirm('Marcar todas as comissões pendentes deste parceiro como pagas?')) return;
+    const { error } = await supabase
+      .from('partner_commissions')
+      .update({ status: 'paid', paid_at: new Date().toISOString() })
+      .eq('partner_id', partnerId)
+      .eq('status', 'pending');
+    if (!error) {
+      await fetchPartners();
+      alert('Comissões marcadas como pagas! ✅');
+    } else {
+      alert('Erro: ' + error.message);
+    }
+  };
 
   // Derived Metrics
   const metrics = useMemo(() => {
@@ -496,6 +589,7 @@ export default function AdminDashboard() {
             {[
               { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
               { id: 'profissionais', icon: Users, label: 'Profissionais' },
+              { id: 'parceiros', icon: HandCoins, label: 'Parceiros' },
               { id: 'settings', icon: Settings, label: 'Configurações' }
             ].map((item) => (
               <button 
@@ -554,7 +648,7 @@ export default function AdminDashboard() {
         animate={{ left: isSidebarExpanded ? 242 : 66 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-        className="hidden lg:flex fixed top-32 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/10 rounded-full items-center justify-center text-slate-400 hover:text-primary transition-all shadow-xl z-[70] group cursor-pointer"
+        className="hidden lg:flex fixed top-32 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-full items-center justify-center text-slate-400 hover:text-primary transition-all z-[70] group cursor-pointer"
       >
         <motion.div
           animate={{ rotate: isSidebarExpanded ? 180 : 0 }}
@@ -571,10 +665,10 @@ export default function AdminDashboard() {
         className="flex-grow flex flex-col min-h-screen transition-colors duration-500"
       >
         {/* Header - Solid & Clean */}
-        <header className="h-24 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5 flex items-center justify-between px-10 sticky top-0 z-40 transition-all duration-500 backdrop-blur-md bg-white/80 dark:bg-slate-900/80">
+        <header className="h-24 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 flex items-center justify-between px-10 sticky top-0 z-40 transition-all duration-500 backdrop-blur-md bg-white/80 dark:bg-slate-900/80">
           <div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {activeView === 'dashboard' ? 'Painel Geral' : activeView === 'profissionais' ? 'Gestão de Profissionais' : 'Configurações'}
+              {activeView === 'dashboard' ? 'Painel Geral' : activeView === 'profissionais' ? 'Gestão de Profissionais' : activeView === 'parceiros' ? 'Programa de Parceiros' : 'Configurações'}
             </h1>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Reformaê CRM & Analytics</p>
           </div>
@@ -587,7 +681,7 @@ export default function AdminDashboard() {
                 placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-11 pl-11 pr-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl text-xs font-bold text-slate-700 dark:text-white placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-primary/5 transition-all"
+                className="w-full h-11 pl-11 pr-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-white placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-primary/5 transition-all"
               />
             </div>
 
@@ -595,7 +689,7 @@ export default function AdminDashboard() {
               <div className="relative">
                 <button 
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="w-11 h-11 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/5 text-slate-400 rounded-2xl flex items-center justify-center hover:text-primary transition-all active:scale-95 relative"
+                  className="w-11 h-11 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 text-slate-400 rounded-xl flex items-center justify-center hover:text-primary transition-all active:scale-95 relative"
                   title="Notificações"
                 >
                   <Bell size={20} />
@@ -612,7 +706,7 @@ export default function AdminDashboard() {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-4 w-80 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-3xl shadow-2xl z-50 overflow-hidden"
+                      className="absolute right-0 mt-4 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-2xl shadow-xl z-50 overflow-hidden"
                     >
                       <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
                         <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Notificações</h3>
@@ -648,14 +742,14 @@ export default function AdminDashboard() {
               <button 
                 onClick={fetchLeads}
                 disabled={loading}
-                className="w-11 h-11 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/5 text-slate-400 rounded-2xl flex items-center justify-center hover:text-primary transition-all active:scale-95 disabled:opacity-50"
+                className="w-11 h-11 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 text-slate-400 rounded-xl flex items-center justify-center hover:text-primary transition-all active:scale-95 disabled:opacity-50"
                 title="Sincronizar"
               >
                 <ArrowUpDown size={18} className={loading ? "animate-spin" : ""} />
               </button>
               <button 
                 onClick={exportCSV}
-                className="h-11 px-6 bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 border border-transparent dark:border-white/10 font-black rounded-2xl flex items-center gap-2 hover:opacity-90 dark:hover:bg-slate-700 transition-all text-xs shadow-lg shadow-slate-900/10 active:scale-95"
+                className="h-11 px-6 bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 border border-transparent dark:border-white/10 font-black rounded-xl flex items-center gap-2 hover:opacity-90 dark:hover:bg-slate-700 transition-all text-xs active:scale-95"
               >
                 <Download size={18} />
                 Exportar
@@ -669,7 +763,7 @@ export default function AdminDashboard() {
                 <p className="text-xs font-black text-slate-900 dark:text-white uppercase leading-none">{adminProfile.name}</p>
                 <p className="text-[10px] font-bold text-primary uppercase mt-1">Administrador</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-xl ring-1 ring-slate-100 dark:ring-white/5 transition-transform group-hover:scale-105">
+              <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-100 dark:ring-white/5 transition-transform group-hover:scale-105">
                 <img src={adminProfile.avatar} alt="Admin" className="w-full h-full object-cover" />
               </div>
             </div>
@@ -680,9 +774,9 @@ export default function AdminDashboard() {
         <div className="p-8 space-y-10">
           
           {activeView === 'dashboard' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               {/* Section: Metrics Content from previous step but inside dashboard view */}
-              <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+              <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
                 <MetricCard title="Total Profissionais" value={metrics.total} icon={Users} color="blue" trend="+12%" />
                 <MetricCard title="Assinantes VIP 💎" value={metrics.vipCount} icon={Crown} color="orange" trend="Premium" />
                 <MetricCard title="Cadastros Hoje" value={metrics.todayCount} icon={UserPlus} color="emerald" trend="Foco do dia" />
@@ -692,13 +786,13 @@ export default function AdminDashboard() {
 
               {/* Quick Summary / Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2.5rem] p-10 border border-slate-100 dark:border-white/5 flex flex-col shadow-sm transition-all duration-500">
+                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-10 border border-slate-200 dark:border-white/5 flex flex-col transition-all duration-500">
                      <div className="flex items-center justify-between mb-10">
                         <div>
                            <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Resumo Semanal</h4>
                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2">Crescimento Real de Cadastros</p>
                         </div>
-                        <div className="flex bg-slate-50 dark:bg-white/5 p-1 rounded-xl gap-1">
+                        <div className="flex bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg p-0.5 text-[10px]">
                            {['7D', '30D'].map(period => (
                              <button 
                                key={period}
@@ -731,7 +825,7 @@ export default function AdminDashboard() {
                                 initial={{ height: 0 }}
                                 animate={{ height: `${heightPct}%` }}
                                 transition={{ type: "spring", stiffness: 100, damping: 20, delay: i * 0.05 }}
-                                className="w-full max-w-[40px] bg-gradient-to-t from-primary/20 to-primary/40 dark:from-primary/10 dark:to-primary/30 rounded-t-xl relative border-x border-t border-primary/20 group-hover/item:border-primary/40 transition-all duration-300 group-hover/item:from-primary/40 group-hover/item:to-primary/60"
+                                className="w-full max-w-[40px] bg-primary/20 dark:bg-primary/10 rounded-t-lg relative border-x border-t border-primary/20 group-hover/item:border-primary/40 transition-all duration-300 group-hover/item:bg-primary/40"
                               >
                                 {/* Inner glow for depth */}
                                 <div className="absolute inset-0 bg-white/10 dark:bg-white/5 opacity-0 group-hover/item:opacity-100 transition-opacity rounded-t-lg" />
@@ -742,7 +836,7 @@ export default function AdminDashboard() {
 
                               {/* Tooltip - Premium Floating */}
                               <div className="absolute -top-16 left-1/2 -translate-x-1/2 opacity-0 group-hover/item:opacity-100 transition-all duration-300 z-50 pointer-events-none scale-90 group-hover/item:scale-100">
-                                <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 rounded-xl shadow-2xl border border-white/10 dark:border-slate-200 text-center min-w-[100px] backdrop-blur-md">
+                                <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 rounded-lg border border-white/10 dark:border-slate-200 text-center min-w-[100px] backdrop-blur-md">
                                   <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-0.5">{d.name}</p>
                                   <p className="text-xs font-black">{d.value} leads</p>
                                   <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 dark:bg-white rotate-45" />
@@ -792,13 +886,13 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
+                  <div className="bg-slate-900 rounded-2xl p-10 text-white relative overflow-hidden">
                      <TrendingUp className="absolute -right-10 -top-10 text-white/5" size={200} />
                      <h4 className="text-xl font-black mb-8 relative z-10 tracking-tight">Atividade Recente</h4>
                      <div className="space-y-4 relative z-10">
                         {leads.slice(0, 4).map(l => (
-                          <div key={l.id} className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors group">
-                             <div className="w-10 h-10 bg-primary/20 text-primary rounded-xl flex items-center justify-center text-xs font-black">{l.nome[0]}{l.sobrenome[0]}</div>
+                          <div key={l.id} className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 transition-colors group">
+                             <div className="w-10 h-10 bg-primary/20 text-primary rounded-lg flex items-center justify-center text-xs font-black">{l.nome[0]}{l.sobrenome[0]}</div>
                              <div className="flex flex-col">
                                 <span className="text-xs font-bold group-hover:text-primary transition-colors">{l.nome} {l.sobrenome}</span>
                                 <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">Novo Profissional</span>
@@ -806,7 +900,7 @@ export default function AdminDashboard() {
                           </div>
                         ))}
                      </div>
-                     <button onClick={() => setActiveView('profissionais')} className="mt-10 w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all shadow-lg active:scale-95">Ver todos</button>
+                     <button onClick={() => setActiveView('profissionais')} className="mt-10 w-full py-5 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95">Ver todos</button>
                   </div>
                </div>
             </motion.div>
@@ -852,7 +946,7 @@ export default function AdminDashboard() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-primary/5"
+                    className="bg-primary/5 border border-primary/10 rounded-xl p-4 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-4">
                       <span className="text-sm font-black text-primary uppercase tracking-widest">{selectedLeads.length} selecionados</span>
@@ -890,11 +984,11 @@ export default function AdminDashboard() {
               </AnimatePresence>
 
               {/* List Header Labels - Pixel Perfect Unified Alignment */}
-              <div className="grid grid-cols-12 px-6 py-4 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 hidden lg:grid items-center mb-4">
+              <div className="grid grid-cols-12 px-6 py-4 bg-slate-50/50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/10 hidden lg:grid items-center mb-4">
                  <div className="col-span-1 flex justify-center">
                     <input 
                       type="checkbox" 
-                      className="w-5 h-5 accent-primary bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 rounded-lg cursor-pointer transition-all" 
+                      className="w-5 h-5 accent-primary bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 rounded-md cursor-pointer transition-all" 
                       checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0} 
                       onChange={() => setSelectedLeads(selectedLeads.length === filteredLeads.length ? [] : filteredLeads.map(l => l.id))} 
                     />
@@ -923,122 +1017,382 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {activeView === 'parceiros' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+              {/* Partner Metric Cards */}
+              <section className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-4 gap-4">
+                {[{
+                  label: 'Parceiros Ativos', value: partners.filter(p => p.is_active).length, color: 'bg-blue-50 text-blue-600'
+                }, {
+                  label: 'Cliques Totais', value: partnerClicks.length, color: 'bg-purple-50 text-purple-600'
+                }, {
+                  label: 'VIPs via Parceiro', value: partnerOrders.filter(o => o.partner_id && o.payment_status === 'paid').length, color: 'bg-amber-50 text-amber-600'
+                }, {
+                  label: 'Comissão Pendente',
+                  value: `R$${partnerCommissions.filter(c => c.status === 'pending').reduce((s, c) => s + Number(c.amount), 0).toFixed(2).replace('.', ',')}`,
+                  color: 'bg-emerald-50 text-emerald-600'
+                }].map((m, i) => (
+                  <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-white/5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{m.label}</p>
+                    <p className={`text-2xl font-black ${m.color.split(' ')[1]}`}>{m.value}</p>
+                  </div>
+                ))}
+              </section>
+
+              {/* Revenue breakdown */}
+              <div className="grid lg:grid-cols-2 gap-4">
+                {[{
+                  label: 'Receita Bruta (via parceiros)', value: partnerOrders.filter(o => o.partner_id && o.payment_status === 'paid').reduce((s, o) => s + Number(o.final_amount_paid), 0)
+                }, {
+                  label: 'Taxas AbacatePay (via parceiros)', value: partnerOrders.filter(o => o.partner_id && o.payment_status === 'paid').reduce((s, o) => s + Number(o.gateway_fee), 0)
+                }, {
+                  label: 'Receita Líquida (via parceiros)', value: partnerOrders.filter(o => o.partner_id && o.payment_status === 'paid').reduce((s, o) => s + Number(o.net_revenue), 0)
+                }].map((m, i) => (
+                  <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-white/5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{m.label}</p>
+                    <p className="text-xl font-black text-slate-900 dark:text-white">R${m.value.toFixed(2).replace('.', ',')}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Actions bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">Parceiros Cadastrados</h2>
+                <div className="flex gap-3">
+                  <button onClick={() => { setNewCoupon(c => ({...c, partner_id: ''})); setShowNewCouponModal(true); }}
+                    className="h-10 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white font-black rounded-xl text-xs hover:border-primary hover:text-primary transition-all flex items-center gap-2">
+                    <Tag size={14} /> Novo Cupom
+                  </button>
+                  <button onClick={() => setShowNewPartnerModal(true)}
+                    className="h-10 px-5 bg-primary text-white font-black rounded-xl text-xs hover:opacity-90 transition-all flex items-center gap-2">
+                    <Plus size={14} /> Novo Parceiro
+                  </button>
+                </div>
+              </div>
+
+              {/* Partners table */}
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden">
+                <div className="grid grid-cols-12 px-6 py-4 bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <div className="col-span-3">Parceiro</div>
+                  <div className="col-span-2">Link / Slug</div>
+                  <div className="col-span-1 text-center">Cliques</div>
+                  <div className="col-span-1 text-center">VIPs</div>
+                  <div className="col-span-1 text-center">Comissão</div>
+                  <div className="col-span-2 text-center">Pend. / Paga</div>
+                  <div className="col-span-2 text-right pr-4">Ações</div>
+                </div>
+
+                {partners.length === 0 ? (
+                  <div className="py-20 text-center text-slate-400 text-sm font-bold">Nenhum parceiro cadastrado ainda.</div>
+                ) : partners.map(partner => {
+                  const clicks = partnerClicks.filter(c => c.partner_id === partner.id).length;
+                  const vips = partnerOrders.filter(o => o.partner_id === partner.id && o.payment_status === 'paid').length;
+                  const pending = partnerCommissions.filter(c => c.partner_id === partner.id && c.status === 'pending').reduce((s, c) => s + Number(c.amount), 0);
+                  const paid = partnerCommissions.filter(c => c.partner_id === partner.id && c.status === 'paid').reduce((s, c) => s + Number(c.amount), 0);
+                  const isExpanded = selectedPartnerId === partner.id;
+
+                  return (
+                    <div key={partner.id} className="border-b border-slate-50 dark:border-white/5 last:border-0">
+                      <div className="grid grid-cols-12 px-6 py-4 items-center hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group">
+                        <div className="col-span-3">
+                          <p className="text-sm font-black text-slate-900 dark:text-white">{partner.name}</p>
+                          <p className="text-[10px] text-slate-400 font-bold">{partner.email}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-black text-primary bg-primary/5 px-2 py-1 rounded-lg border border-primary/10 truncate">?ref={partner.slug}</span>
+                            <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/trabalhe-conosco?ref=${partner.slug}`); alert('Link copiado!'); }}
+                              className="w-6 h-6 bg-slate-100 dark:bg-white/5 rounded flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
+                              <Copy size={10} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="col-span-1 text-center font-black text-slate-700 dark:text-slate-300 text-sm">{clicks}</div>
+                        <div className="col-span-1 text-center">
+                          <span className="font-black text-amber-600 text-sm">{vips}</span>
+                        </div>
+                        <div className="col-span-1 text-center text-[10px] font-black text-slate-500">{partner.commission_pct}%</div>
+                        <div className="col-span-2 text-center">
+                          <div className="space-y-0.5">
+                            <p className="text-[10px] font-black text-amber-600">Pend: R${pending.toFixed(2).replace('.', ',')}</p>
+                            <p className="text-[10px] font-bold text-emerald-600">Pago: R${paid.toFixed(2).replace('.', ',')}</p>
+                          </div>
+                        </div>
+                        <div className="col-span-2 flex items-center justify-end gap-2 pr-2">
+                          <button onClick={() => setSelectedPartnerId(isExpanded ? null : partner.id)}
+                            className="h-8 px-3 text-[10px] font-black text-slate-500 hover:text-primary bg-slate-50 dark:bg-white/5 rounded-lg transition-colors">
+                            {isExpanded ? 'Fechar' : 'Cupons'}
+                          </button>
+                          {pending > 0 && (
+                            <button onClick={() => handleMarkCommissionPaid(partner.id)}
+                              className="h-8 px-3 text-[10px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-100 dark:border-emerald-500/20">
+                              Marcar Pago
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Expanded coupons */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+                            <div className="px-6 py-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cupons do parceiro</p>
+                                <button onClick={() => { setNewCoupon(c => ({...c, partner_id: partner.id})); setShowNewCouponModal(true); }}
+                                  className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">
+                                  <Plus size={10} /> Novo cupom
+                                </button>
+                              </div>
+                              {partner.partner_coupons?.length === 0 ? (
+                                <p className="text-[11px] text-slate-400 font-bold">Nenhum cupom criado ainda.</p>
+                              ) : (
+                                <div className="flex flex-wrap gap-2">
+                                  {partner.partner_coupons?.map((c: any) => (
+                                    <div key={c.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black ${
+                                      c.is_active ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-100 border-slate-200 text-slate-400 line-through'
+                                    }`}>
+                                      <Tag size={10} className="text-primary" />
+                                      {c.code}
+                                      {c.discount_type !== 'none' && (
+                                        <span className="text-emerald-600">
+                                          -{c.discount_type === 'percent' ? `${c.discount_value}%` : `R$${c.discount_value}`}
+                                        </span>
+                                      )}
+                                      <span className="text-slate-400">{c.uses_count}{c.max_uses ? `/${c.max_uses}` : ''} usos</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* New Partner Modal */}
+              <AnimatePresence>
+                {showNewPartnerModal && (
+                  <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      onClick={() => setShowNewPartnerModal(false)}
+                      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
+                    <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                      className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">Novo Parceiro</h3>
+                      <div className="space-y-4">
+                        {[{ label: 'Nome', key: 'name', placeholder: 'João Silva', type: 'text' },
+                          { label: 'E-mail', key: 'email', placeholder: 'joao@email.com', type: 'email' },
+                          { label: 'WhatsApp', key: 'whatsapp', placeholder: '(83) 9 9999-9999', type: 'text' },
+                          { label: 'Slug (link)', key: 'slug', placeholder: 'joao-silva', type: 'text' }].map(f => (
+                          <div key={f.key} className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.label}</label>
+                            <input type={f.type} placeholder={f.placeholder} value={(newPartner as any)[f.key]}
+                              onChange={e => setNewPartner(p => ({...p, [f.key]: e.target.value}))}
+                              className="w-full h-12 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all" />
+                          </div>
+                        ))}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Comissão (%)</label>
+                          <input type="number" min="0" max="100" value={newPartner.commission_pct}
+                            onChange={e => setNewPartner(p => ({...p, commission_pct: Number(e.target.value)}))}
+                            className="w-full h-12 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-primary transition-all" />
+                        </div>
+                      </div>
+                      <div className="flex gap-3 mt-8">
+                        <button onClick={() => setShowNewPartnerModal(false)}
+                          className="flex-1 h-12 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-500 font-black text-xs hover:bg-slate-50 transition-all">Cancelar</button>
+                        <button onClick={handleCreatePartner} disabled={savingPartner}
+                          className="flex-1 h-12 bg-primary text-white font-black rounded-2xl text-xs hover:opacity-90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
+                          {savingPartner ? 'Salvando...' : 'Criar Parceiro'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+
+              {/* New Coupon Modal */}
+              <AnimatePresence>
+                {showNewCouponModal && (
+                  <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      onClick={() => setShowNewCouponModal(false)}
+                      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
+                    <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                      className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">Novo Cupom</h3>
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Parceiro</label>
+                          <select value={newCoupon.partner_id} onChange={e => setNewCoupon(c => ({...c, partner_id: e.target.value}))}
+                            className="w-full h-12 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-primary transition-all">
+                            <option value="">Selecionar parceiro...</option>
+                            {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Código do cupom</label>
+                          <input type="text" placeholder="Ex: JOAO50" value={newCoupon.code}
+                            onChange={e => setNewCoupon(c => ({...c, code: e.target.value.toUpperCase()}))}
+                            className="w-full h-12 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-black text-slate-900 dark:text-white outline-none focus:border-primary transition-all uppercase" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tipo de desconto</label>
+                          <select value={newCoupon.discount_type} onChange={e => setNewCoupon(c => ({...c, discount_type: e.target.value}))}
+                            className="w-full h-12 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-primary transition-all">
+                            <option value="none">Sem desconto (só tracking)</option>
+                            <option value="fixed">Valor fixo (R$)</option>
+                            <option value="percent">Percentual (%)</option>
+                          </select>
+                        </div>
+                        {newCoupon.discount_type !== 'none' && (
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Valor do desconto</label>
+                            <input type="number" min="0" value={newCoupon.discount_value}
+                              onChange={e => setNewCoupon(c => ({...c, discount_value: Number(e.target.value)}))}
+                              className="w-full h-12 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-primary transition-all" />
+                          </div>
+                        )}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Máximo de usos (vazio = ilimitado)</label>
+                          <input type="number" min="1" placeholder="Ex: 100" value={newCoupon.max_uses}
+                            onChange={e => setNewCoupon(c => ({...c, max_uses: e.target.value}))}
+                            className="w-full h-12 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-primary transition-all" />
+                        </div>
+                      </div>
+                      <div className="flex gap-3 mt-8">
+                        <button onClick={() => setShowNewCouponModal(false)}
+                          className="flex-1 h-12 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-500 font-black text-xs hover:bg-slate-50 transition-all">Cancelar</button>
+                        <button onClick={handleCreateCoupon} disabled={savingCoupon}
+                          className="flex-1 h-12 bg-primary text-white font-black rounded-2xl text-xs hover:opacity-90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
+                          {savingCoupon ? 'Salvando...' : 'Criar Cupom'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
           {activeView === 'settings' && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-4xl mx-auto space-y-10 pb-20">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8 pb-20">
                <div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Configurações</h2>
-                  <p className="text-slate-400 font-medium">Gerencie suas informações pessoais e segurança da conta.</p>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Configurações</h2>
+                  <p className="text-slate-400 text-sm font-medium mt-1">Gerencie suas informações pessoais e segurança da conta.</p>
                </div>
 
-               <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Left Column: Avatar & Quick Info */}
-                  <div className="space-y-6">
-                     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 text-center relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="relative z-10">
-                           <div className="w-24 h-24 mx-auto mb-4 rounded-3xl overflow-hidden border-4 border-slate-50 shadow-xl group-hover:scale-105 transition-transform duration-500">
-                              <img src={adminProfile.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                           </div>
-                           <h4 className="font-black text-slate-900">{adminProfile.name}</h4>
-                           <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Administrador Master</p>
-                           <input 
-                             type="file" 
-                             id="avatar-upload" 
-                             hidden 
-                             accept="image/*" 
-                             onChange={handleAvatarChange} 
-                           />
-                           <button 
-                             onClick={() => document.getElementById('avatar-upload')?.click()}
-                             className="mt-6 w-full py-3 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all border border-white/10"
-                           >
-                             Alterar Avatar
-                           </button>
+                  <div className="space-y-4">
+                     <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden border border-slate-200">
+                           <img src={adminProfile.avatar} alt="Avatar" className="w-full h-full object-cover" />
                         </div>
+                        <h4 className="font-black text-slate-900 text-sm">{adminProfile.name}</h4>
+                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Administrador Master</p>
+                        <input
+                          type="file"
+                          id="avatar-upload"
+                          hidden
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                        />
+                        <button
+                          onClick={() => document.getElementById('avatar-upload')?.click()}
+                          className="mt-5 w-full h-10 bg-slate-900 text-white rounded-xl text-xs font-black hover:bg-slate-700 transition-all"
+                        >
+                          Alterar Avatar
+                        </button>
                      </div>
 
-                     <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                     <div className="bg-white rounded-2xl border border-slate-200 p-5">
                         <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Status da Conta</h5>
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-1">
                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                            <span className="text-xs font-bold text-slate-700">Conta Verificada</span>
                         </div>
-                        <p className="text-[10px] text-slate-400">Último acesso: Hoje às 11:45</p>
+                        <p className="text-[10px] text-slate-400 font-medium">Último acesso: Hoje às 11:45</p>
                      </div>
                   </div>
 
                   {/* Right Column: Forms */}
-                  <div className="lg:col-span-2 space-y-6">
+                  <div className="lg:col-span-2 space-y-4">
                      {/* Personal Info */}
-                     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                        <div className="flex items-center gap-3 mb-8">
-                           <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                              <User size={20} />
+                     <div className="bg-white rounded-2xl border border-slate-200 p-7">
+                        <div className="flex items-center gap-3 mb-6 pb-5 border-b border-slate-100">
+                           <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                              <User size={16} />
                            </div>
-                           <h4 className="font-black text-slate-900 tracking-tight">Dados Pessoais</h4>
+                           <h4 className="font-black text-slate-900 tracking-tight text-sm">Dados Pessoais</h4>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
-                              <input 
-                                 type="text" 
-                                 value={adminProfile.name} 
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nome Completo</label>
+                              <input
+                                 type="text"
+                                 value={adminProfile.name}
                                  onChange={(e) => setAdminProfile(p => ({ ...p, name: e.target.value }))}
-                                 className="w-full h-12 px-5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                                 className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                               />
                            </div>
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail Comercial</label>
-                              <input 
-                                 type="email" 
-                                 value={adminProfile.email} 
-                                 className="w-full h-12 px-5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all opacity-70"
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">E-mail Comercial</label>
+                              <input
+                                 type="email"
+                                 value={adminProfile.email}
+                                 className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none opacity-60 cursor-not-allowed"
                                  disabled
                               />
                            </div>
                            <div className="md:col-span-2 space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mini Biografia</label>
-                              <textarea 
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mini Biografia</label>
+                              <textarea
                                  rows={3}
                                  value={adminProfile.bio}
                                  onChange={(e) => setAdminProfile(p => ({ ...p, bio: e.target.value }))}
-                                 placeholder="Conte um pouco sobre suas responsabilidades..." 
-                                 className="w-full p-5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none"
+                                 placeholder="Conte um pouco sobre suas responsabilidades..."
+                                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
                               />
                            </div>
                         </div>
 
-                        <button 
+                        <button
                           onClick={handleSaveProfile}
                           disabled={loading}
-                          className="mt-8 px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                          className="mt-6 h-11 px-7 bg-primary text-white rounded-xl font-black text-xs hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50"
                         >
                            {loading ? 'Salvando...' : 'Salvar Alterações'}
                         </button>
                      </div>
 
                      {/* Security */}
-                     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                        <div className="flex items-center gap-3 mb-8">
-                           <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
-                              <Shield size={20} />
+                     <div className="bg-white rounded-2xl border border-slate-200 p-7">
+                        <div className="flex items-center gap-3 mb-6 pb-5 border-b border-slate-100">
+                           <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center">
+                              <Shield size={16} />
                            </div>
-                           <h4 className="font-black text-slate-900 tracking-tight">Segurança</h4>
+                           <h4 className="font-black text-slate-900 tracking-tight text-sm">Segurança</h4>
                         </div>
 
-                        <div className="space-y-4">
-                           <button 
+                        <div className="space-y-2">
+                           <button
                              onClick={() => alert('Um link para redefinir sua senha foi enviado para seu e-mail! 🔐')}
-                             className="w-full h-14 px-6 bg-slate-50 rounded-2xl flex items-center justify-between group hover:bg-slate-100 transition-all"
+                             className="w-full h-12 px-5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between group hover:border-slate-300 hover:bg-white transition-all"
                            >
                               <span className="text-sm font-bold text-slate-700">Alterar senha de acesso</span>
-                              <ChevronRight size={18} className="text-slate-300 group-hover:text-primary transition-colors" />
+                              <ChevronRight size={16} className="text-slate-300 group-hover:text-primary transition-colors" />
                            </button>
-                           <button className="w-full h-14 px-6 bg-slate-50 rounded-2xl flex items-center justify-between group hover:bg-slate-100 transition-all">
-                              <span className="text-sm font-bold text-slate-700">Habilitar autenticação em dois fatores</span>
-                              <div className="w-10 h-5 bg-slate-200 rounded-full relative p-1">
-                                 <div className="w-3 h-3 bg-white rounded-full" />
+                           <button className="w-full h-12 px-5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between group hover:border-slate-300 hover:bg-white transition-all">
+                              <span className="text-sm font-bold text-slate-700">Autenticação em dois fatores</span>
+                              <div className="w-9 h-5 bg-slate-200 rounded-full relative flex items-center px-0.5">
+                                 <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
                               </div>
                            </button>
                         </div>
@@ -1047,6 +1401,7 @@ export default function AdminDashboard() {
                </div>
             </motion.div>
           )}
+
         </div>
       </motion.main>
 
@@ -1096,33 +1451,29 @@ export default function AdminDashboard() {
 // --- SUB-COMPONENTS ---
 
 function MetricCard({ title, value, icon: Icon, color, trend, isString = false }: any) {
-  const colors = {
-    blue: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    emerald: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    indigo: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-    orange: 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400',
+  const colorMap = {
+    blue:    { dot: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-400',    tag: 'text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400' },
+    emerald: { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', tag: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400' },
+    indigo:  { dot: 'bg-indigo-500',  text: 'text-indigo-600 dark:text-indigo-400',  tag: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 dark:text-indigo-400' },
+    orange:  { dot: 'bg-orange-500',  text: 'text-orange-600 dark:text-orange-400',  tag: 'text-orange-600 bg-orange-50 dark:bg-orange-500/10 dark:text-orange-400' },
   };
+  const c = colorMap[color as keyof typeof colorMap] || colorMap.blue;
 
   return (
-    <motion.div 
-      whileHover={{ y: -5 }}
-      className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-300"
-    >
-      <div className="flex items-center justify-between mb-8">
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colors[color as keyof typeof colors]} shadow-inner`}>
-          <Icon size={28} />
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/70 dark:border-white/5 transition-colors hover:border-slate-300 dark:hover:border-white/10 group">
+      <div className="flex items-start justify-between mb-5">
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${c.text} bg-current/5`} style={{backgroundColor: 'transparent'}}>
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${c.text}`} style={{background: 'transparent', border: '1.5px solid currentColor', opacity: 0.7}}>
+            <Icon size={16} />
+          </div>
         </div>
-        <div className="flex flex-col items-end">
-           <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${colors[color as keyof typeof colors]}`}>
-             {trend}
-           </span>
-        </div>
+        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${c.tag}`}>
+          {trend}
+        </span>
       </div>
-      <div>
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">{title}</p>
-        <h3 className={`font-black text-slate-900 dark:text-white tracking-tight ${isString ? 'text-2xl' : 'text-4xl'}`}>{value}</h3>
-      </div>
-    </motion.div>
+      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-1.5">{title}</p>
+      <h3 className={`font-black text-slate-900 dark:text-white tracking-tight leading-none ${isString ? 'text-xl' : 'text-3xl'}`}>{value}</h3>
+    </div>
   );
 }
 
@@ -1132,7 +1483,11 @@ function LeadCard({ lead, onView, isSelected, onSelect }: any) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       onClick={onView}
-      className={`group bg-white dark:bg-slate-900/50 px-6 py-5 rounded-3xl border transition-all flex flex-col md:row items-center cursor-pointer mb-4 ${isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary/20 shadow-xl shadow-primary/5' : 'border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 hover:shadow-lg'}`}
+      className={`group bg-white dark:bg-slate-900/50 px-6 py-5 rounded-xl border transition-colors flex flex-col md:row items-center cursor-pointer mb-3 ${
+        isSelected
+          ? 'border-primary bg-primary/[0.03] ring-1 ring-primary/20'
+          : 'border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 hover:bg-slate-50/50 dark:hover:bg-white/5'
+      }`}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 w-full items-center">
         {/* Checkbox Column */}
@@ -1237,7 +1592,7 @@ function LeadDrawer({ lead, onClose, onDelete }: any) {
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-white dark:bg-slate-950 shadow-3xl z-[110] flex flex-col font-sans overflow-hidden"
+        className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-white dark:bg-slate-950 z-[110] flex flex-col font-sans overflow-hidden border-l border-slate-200 dark:border-white/5"
       >
         {/* Header Drawer */}
         <div className="h-20 px-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
@@ -1423,7 +1778,9 @@ function FilterDropdown({ value, onChange, options, label }: any) {
       <div className="relative">
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className={`h-11 px-5 min-w-[140px] bg-white dark:bg-slate-900 border ${isOpen ? 'border-primary ring-4 ring-primary/5' : 'border-slate-100 dark:border-white/10'} rounded-2xl flex items-center justify-between gap-4 transition-all hover:border-primary/30 group`}
+          className={`h-11 px-5 min-w-[140px] bg-white dark:bg-slate-900 border ${
+          isOpen ? 'border-primary ring-2 ring-primary/5' : 'border-slate-200 dark:border-white/10'
+        } rounded-xl flex items-center justify-between gap-4 transition-all hover:border-slate-300 group`}
         >
           <span className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
             {getDisplayLabel(value)}
@@ -1437,7 +1794,7 @@ function FilterDropdown({ value, onChange, options, label }: any) {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute z-[100] left-0 right-0 mt-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-[1.5rem] shadow-2xl shadow-slate-900/10 overflow-hidden py-2 px-1.5 backdrop-blur-xl"
+              className="absolute z-[100] left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-lg shadow-slate-900/5 overflow-hidden py-1.5 px-1.5"
             >
               {options.map((opt: string) => {
                 const isSelected = value === opt;

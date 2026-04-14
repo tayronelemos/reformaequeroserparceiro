@@ -4,7 +4,7 @@ import {
   Send, CheckCircle2, AlertCircle, X, ChevronRight, HardHat, Zap, Droplets, 
   Paintbrush, Sprout, Home, Hammer, Ruler, GlassWater, Thermometer, UserCog, 
   MoreHorizontal, ChevronDown, MapPin, Search, Loader2, Crown, Sparkles, CreditCard,
-  Copy, Check, Sofa, Bug, Waves, Baby
+  Copy, Check, Sofa, Bug, Waves, Baby, Tag, Users
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -33,6 +33,9 @@ const experienceOptions = [
   "3 a 5 anos",
   "Mais de 5 anos"
 ];
+
+const GROSS_AMOUNT = 16.90;
+const GATEWAY_FEE = 0.80;
 
 export default function ProfessionalForm() {
   const [formData, setFormData] = useState({
@@ -64,7 +67,111 @@ export default function ProfessionalForm() {
   const [copied, setCopied] = useState(false);
   const expRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  // ─── Partner Tracking State ───
+  const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [partnerName, setPartnerName] = useState<string | null>(null);
+  const [utmRef, setUtmRef] = useState<string | null>(null);
+
+  // ─── Coupon State ───
+  const [couponCode, setCouponCode] = useState('');
+  const [couponPartnerId, setCouponPartnerId] = useState<string | null>(null);
+  const [couponId, setCouponId] = useState<string | null>(null);
+  const [couponStatus, setCouponStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
+  const [couponMessage, setCouponMessage] = useState('');
+  const [couponPartnerName, setCouponPartnerName] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [finalAmount, setFinalAmount] = useState(GROSS_AMOUNT);
+
+  // ─── 1. Track partner from URL (?ref= or ?partner=) ───
+  useEffect(() => {
+    const init = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref') || params.get('partner');
+      if (!ref) return;
+
+      setUtmRef(ref);
+
+      try {
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('id, name')
+          .eq('slug', ref)
+          .eq('is_active', true)
+          .single();
+
+        if (partner) {
+          setPartnerId(partner.id);
+          setPartnerName(partner.name);
+          sessionStorage.setItem('partner_id', partner.id);
+          sessionStorage.setItem('partner_name', partner.name);
+
+          // Register click
+          await supabase
+            .from('partner_clicks')
+            .insert({ partner_id: partner.id, source_url: window.location.href });
+
+          console.log(`[Partner Tracking] Parceiro identificado: ${partner.name}`);
+        }
+      } catch (err) {
+        console.error('[Partner Tracking] Erro ao buscar parceiro:', err);
+      }
+    };
+
+    // Restore from session if still tracking
+    const storedId = sessionStorage.getItem('partner_id');
+    const storedName = sessionStorage.getItem('partner_name');
+    if (storedId) {
+      setPartnerId(storedId);
+      setPartnerName(storedName);
+    }
+
+    init();
+  }, []);
+
+  // ─── 2. Apply coupon ───
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponStatus('loading');
+    setCouponMessage('');
+
+    try {
+      const res = await fetch(`/api/validate-coupon?code=${couponCode.trim().toUpperCase()}`);
+      const data = await res.json();
+
+      if (data.valid) {
+        setCouponStatus('valid');
+        setCouponMessage(data.message);
+        setCouponId(data.coupon_id);
+        setCouponPartnerId(data.partner_id);
+        setCouponPartnerName(data.partner_name);
+
+        // Override partner from URL if coupon provides one
+        if (data.partner_id) {
+          setPartnerId(data.partner_id);
+          setPartnerName(data.partner_name);
+        }
+
+        // Apply discount
+        if (data.discount_type === 'fixed' && data.discount_value > 0) {
+          const disc = Math.min(data.discount_value, GROSS_AMOUNT);
+          setDiscountAmount(disc);
+          setFinalAmount(parseFloat((GROSS_AMOUNT - disc).toFixed(2)));
+        } else if (data.discount_type === 'percent' && data.discount_value > 0) {
+          const disc = parseFloat(((GROSS_AMOUNT * data.discount_value) / 100).toFixed(2));
+          setDiscountAmount(disc);
+          setFinalAmount(parseFloat((GROSS_AMOUNT - disc).toFixed(2)));
+        }
+      } else {
+        setCouponStatus('invalid');
+        setCouponMessage(data.message || 'Cupom inválido.');
+      }
+    } catch (err) {
+      setCouponStatus('invalid');
+      setCouponMessage('Erro ao validar cupom. Tente novamente.');
+    }
+  };
+
+  // ─── Close dropdown when clicking outside ───
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (expRef.current && !expRef.current.contains(event.target as Node)) {
@@ -78,7 +185,7 @@ export default function ProfessionalForm() {
   const handleToggleCategory = (catId: string) => {
     setFormData(prev => ({
       ...prev,
-      categorias: prev.categorias.includes(catId) 
+      categorias: prev.categorias.includes(catId)
         ? prev.categorias.filter(id => id !== catId)
         : [...prev.categorias, catId]
     }));
@@ -95,24 +202,18 @@ export default function ProfessionalForm() {
   const handleTaxIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, '');
     if (val.length > 11) val = val.slice(0, 11);
-    
-    // Mask: 000.000.000-00
     let masked = val;
     if (val.length > 3) masked = `${val.slice(0, 3)}.${val.slice(3)}`;
     if (val.length > 6) masked = `${masked.slice(0, 7)}.${masked.slice(7)}`;
     if (val.length > 9) masked = `${masked.slice(0, 11)}-${masked.slice(11)}`;
-    
     setTaxId(masked);
   };
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, '');
     if (val.length > 8) val = val.slice(0, 8);
-    
-    // Auto-mask 00000-000
     let masked = val;
     if (val.length > 5) masked = `${val.slice(0, 5)}-${val.slice(5)}`;
-    
     setFormData(prev => ({ ...prev, cep: masked }));
 
     if (val.length === 8) {
@@ -142,24 +243,23 @@ export default function ProfessionalForm() {
     setIsSubmitting(true);
 
     try {
-      // 1. Save to Supabase
       const { data, error } = await supabase
         .from('profissionais')
-        .insert([
-          {
-            ...formData,
-            created_at: new Date().toISOString(),
-            is_vip: false
-          }
-        ])
+        .insert([{
+          ...formData,
+          created_at: new Date().toISOString(),
+          is_vip: false,
+          partner_id: partnerId || null,
+          partner_coupon_id: couponId || null,
+          utm_ref: utmRef || null,
+        }])
         .select();
 
       if (error) throw error;
-      
+
       const newLead = data?.[0];
       if (newLead) setSavedLeadId(newLead.id);
 
-      // 2. Success flow
       setIsSubmitting(false);
       setShowVIPOffer(true);
 
@@ -170,7 +270,7 @@ export default function ProfessionalForm() {
     }
   };
 
-  // Polling for payment status
+  // ─── Polling for payment status ───
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (paymentStatus === 'PENDING' && checkoutData?.id) {
@@ -181,8 +281,7 @@ export default function ProfessionalForm() {
           if (data.status === 'PAID') {
             setPaymentStatus('PAID');
             clearInterval(interval);
-            
-            // 3. Update Supabase to VIP
+
             if (savedLeadId) {
               await supabase
                 .from('profissionais')
@@ -190,7 +289,6 @@ export default function ProfessionalForm() {
                 .eq('id', savedLeadId);
             }
 
-            // Redirect to VIP Group after 3s
             setTimeout(() => {
               window.location.href = 'https://chat.whatsapp.com/Ktz1yQSDWba91dHzRayhjs?mode=gi_t';
             }, 3000);
@@ -211,6 +309,18 @@ export default function ProfessionalForm() {
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4 tracking-tight">Comece seu cadastro</h2>
               <p className="font-medium text-slate-500">Estamos selecionando os melhores profissionais de João Pessoa.</p>
+              
+              {/* Partner Tag */}
+              {partnerName && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-primary text-xs font-black uppercase tracking-widest"
+                >
+                  <Users size={12} />
+                  Indicado por: {partnerName}
+                </motion.div>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-12">
@@ -228,8 +338,8 @@ export default function ProfessionalForm() {
                         type="button"
                         onClick={() => handleToggleCategory(cat.id)}
                         className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-3 ${
-                          isSelected 
-                            ? 'border-primary bg-primary/5 text-primary shadow-lg shadow-primary/5' 
+                          isSelected
+                            ? 'border-primary bg-primary/5 text-primary shadow-lg shadow-primary/5'
                             : 'border-white bg-white text-slate-500 hover:border-slate-200 shadow-sm'
                         }`}
                       >
@@ -245,51 +355,31 @@ export default function ProfessionalForm() {
               <div className="grid md:grid-cols-2 gap-x-6 gap-y-8">
                 <div className="space-y-3">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Nome</label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="Seu nome"
-                    value={formData.nome}
+                  <input required type="text" placeholder="Seu nome" value={formData.nome}
                     onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                    className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                  />
+                    className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                 </div>
                 <div className="space-y-3">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Sobrenome</label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="Seu sobrenome"
-                    value={formData.sobrenome}
+                  <input required type="text" placeholder="Seu sobrenome" value={formData.sobrenome}
                     onChange={(e) => setFormData({...formData, sobrenome: e.target.value})}
-                    className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                  />
+                    className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                 </div>
                 <div className="space-y-3">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">WhatsApp</label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="(00) 00000-0000"
-                    value={formData.whatsapp}
+                  <input required type="text" placeholder="(00) 00000-0000" value={formData.whatsapp}
                     onChange={handlePhoneChange}
-                    className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                  />
+                    className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                 </div>
                 <div className="space-y-3">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">E-mail</label>
-                  <input
-                    required
-                    type="email"
-                    placeholder="exemplo@email.com"
-                    value={formData.email}
+                  <input required type="email" placeholder="exemplo@email.com" value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                  />
+                    className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                 </div>
               </div>
 
-              {/* Endereço Granular */}
+              {/* Endereço */}
               <div className="space-y-8 pt-4">
                 <div className="grid md:grid-cols-4 gap-6">
                   <div className="space-y-3">
@@ -297,74 +387,41 @@ export default function ProfessionalForm() {
                       CEP
                       {isFetchingCep && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
                     </label>
-                    <div className="relative">
-                      <input
-                        required
-                        type="text"
-                        placeholder="00000-000"
-                        value={formData.cep}
-                        onChange={handleCepChange}
-                        className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                      />
-                    </div>
+                    <input required type="text" placeholder="00000-000" value={formData.cep}
+                      onChange={handleCepChange}
+                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                   </div>
                   <div className="md:col-span-2 space-y-3">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Rua / Logradouro</label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="Nome da rua"
-                      value={formData.rua}
+                    <input required type="text" placeholder="Nome da rua" value={formData.rua}
                       onChange={(e) => setFormData({...formData, rua: e.target.value})}
-                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                    />
+                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                   </div>
                   <div className="space-y-3">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Número</label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="123"
-                      value={formData.numero}
+                    <input required type="text" placeholder="123" value={formData.numero}
                       onChange={(e) => setFormData({...formData, numero: e.target.value})}
-                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                    />
+                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                   </div>
                 </div>
-
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-3">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Bairro</label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="Nome do bairro"
-                      value={formData.bairro}
+                    <input required type="text" placeholder="Nome do bairro" value={formData.bairro}
                       onChange={(e) => setFormData({...formData, bairro: e.target.value})}
-                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                    />
+                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                   </div>
                   <div className="space-y-3">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Cidade</label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="João Pessoa"
-                      value={formData.cidade}
+                    <input required type="text" placeholder="João Pessoa" value={formData.cidade}
                       onChange={(e) => setFormData({...formData, cidade: e.target.value})}
-                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                    />
+                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                   </div>
                   <div className="space-y-3">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Estado</label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="PB"
-                      value={formData.estado}
+                    <input required type="text" placeholder="PB" value={formData.estado}
                       onChange={(e) => setFormData({...formData, estado: e.target.value})}
-                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900"
-                    />
+                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900" />
                   </div>
                 </div>
               </div>
@@ -374,35 +431,21 @@ export default function ProfessionalForm() {
                 <div className="space-y-3" ref={expRef}>
                   <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Tempo de experiência</label>
                   <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsExpOpen(!isExpOpen)}
-                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900 flex items-center justify-between"
-                    >
+                    <button type="button" onClick={() => setIsExpOpen(!isExpOpen)}
+                      className="w-full h-14 px-6 bg-white rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-900 flex items-center justify-between">
                       <span className={formData.experiencia ? 'text-slate-900' : 'text-slate-400'}>
                         {formData.experiencia || 'Selecione sua experiência'}
                       </span>
                       <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isExpOpen ? 'rotate-180' : ''}`} />
                     </button>
-
                     <AnimatePresence>
                       {isExpOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="absolute z-50 left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden py-2"
-                        >
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                          className="absolute z-50 left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden py-2">
                           {experienceOptions.map((opt) => (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => {
-                                setFormData({...formData, experiencia: opt});
-                                setIsExpOpen(false);
-                              }}
-                              className="w-full px-6 py-4 text-left hover:bg-primary/5 text-slate-700 font-bold text-sm transition-colors border-l-4 border-transparent hover:border-primary"
-                            >
+                            <button key={opt} type="button"
+                              onClick={() => { setFormData({...formData, experiencia: opt}); setIsExpOpen(false); }}
+                              className="w-full px-6 py-4 text-left hover:bg-primary/5 text-slate-700 font-bold text-sm transition-colors border-l-4 border-transparent hover:border-primary">
                               {opt}
                             </button>
                           ))}
@@ -414,22 +457,15 @@ export default function ProfessionalForm() {
 
                 <div className="space-y-3">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Descreva sua experiência</label>
-                  <textarea
-                    required
-                    placeholder="Conte um pouco sobre os serviços que você já realizou..."
-                    value={formData.descricao}
-                    onChange={(e) => setFormData({...formData, descricao: e.target.value})}
-                    className="w-full min-h-[160px] p-6 bg-white rounded-3xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-700 resize-none"
-                  ></textarea>
+                  <textarea required placeholder="Conte um pouco sobre os serviços que você já realizou..."
+                    value={formData.descricao} onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+                    className="w-full min-h-[160px] p-6 bg-white rounded-3xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium text-slate-700 resize-none" />
                 </div>
               </div>
 
               <div className="pt-8">
-                <button
-                  type="submit"
-                  disabled={isSubmitting || formData.categorias.length === 0}
-                  className="w-full h-18 bg-primary text-white font-black text-xl rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary/20 group"
-                >
+                <button type="submit" disabled={isSubmitting || formData.categorias.length === 0}
+                  className="w-full h-18 bg-primary text-white font-black text-xl rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary/20 group py-5">
                   {isSubmitting ? (
                     <Loader2 className="w-7 h-7 animate-spin" />
                   ) : (
@@ -448,25 +484,21 @@ export default function ProfessionalForm() {
         </div>
       </div>
 
-      {/* Success Modal (Regular Waitlist) */}
+      {/* Success Modal */}
       <AnimatePresence>
         {showSuccess && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="relative bg-white rounded-[3rem] p-10 md:p-12 w-full max-w-[500px] text-center shadow-2xl overflow-hidden"
-            >
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative bg-white rounded-[3rem] p-10 md:p-12 w-full max-w-[500px] text-center shadow-2xl overflow-hidden">
               <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
                 <CheckCircle2 size={40} />
               </div>
               <h3 className="text-2xl md:text-3xl font-black text-slate-900 mb-4 tracking-tight">Cadastro realizado!</h3>
               <p className="text-slate-500 font-medium mb-10 leading-relaxed text-lg">
-                Você agora está na lista de espera comum. <br />
+                Você agora está na lista de espera. <br />
                 <span className="text-emerald-600 font-bold">Redirecionando para o WhatsApp...</span>
               </p>
-              
               <div className="space-y-4">
                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
                   <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 3 }} className="h-full bg-emerald-500" />
@@ -481,20 +513,14 @@ export default function ProfessionalForm() {
       <AnimatePresence>
         {showVIPOffer && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl" 
-            />
-            
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="relative bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl my-auto"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl" />
+
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 50 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl my-auto">
+
               {paymentStatus !== 'PAID' ? (
                 <>
-                  {/* Top Bar / Header - Reduced Padding */}
+                  {/* Header */}
                   <div className="bg-primary p-6 md:p-10 text-center text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse" />
                     <Sparkles className="w-8 h-8 mx-auto mb-4 text-yellow-300 animate-bounce" />
@@ -506,17 +532,13 @@ export default function ProfessionalForm() {
                     </p>
                   </div>
 
-                  {/* Body - More Compact */}
-                  <div className="p-6 md:p-8 space-y-6">
+                  {/* Body */}
+                  <div className="p-6 md:p-8 space-y-5">
                     {paymentStatus === 'IDLE' ? (
                       <>
+                        {/* Benefits */}
                         <div className="grid grid-cols-2 gap-2">
-                          {[
-                            "Contatos na hora",
-                            "Orçamentos ilimitados",
-                            "Selo Verificado",
-                            "Grupo VIP WhatsApp"
-                          ].map((feat, idx) => (
+                          {["Contatos na hora", "Orçamentos ilimitados", "Selo Verificado", "Grupo VIP WhatsApp"].map((feat, idx) => (
                             <div key={idx} className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                               <div className="w-5 h-5 bg-primary/10 text-primary rounded-full flex items-center justify-center flex-shrink-0">
                                 <Check size={10} className="stroke-[4]" />
@@ -526,54 +548,121 @@ export default function ProfessionalForm() {
                           ))}
                         </div>
 
+                        {/* Price */}
                         <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl text-center">
                           <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Oferta de Lançamento</p>
                           <div className="flex items-baseline gap-2 justify-center">
                             <span className="text-gray-400 line-through text-sm font-bold">R$ 89,90</span>
-                            <span className="text-3xl font-black text-slate-900 tracking-tighter">R$ 16,90</span>
+                            {discountAmount > 0 && (
+                              <span className="text-gray-400 line-through text-sm font-bold">R$ {GROSS_AMOUNT.toFixed(2).replace('.', ',')}</span>
+                            )}
+                            <span className="text-3xl font-black text-slate-900 tracking-tighter">
+                              R$ {finalAmount.toFixed(2).replace('.', ',')}
+                            </span>
                           </div>
+                          {discountAmount > 0 && (
+                            <p className="text-[9px] text-emerald-600 font-black mt-1 uppercase tracking-widest">
+                              Desconto de R${discountAmount.toFixed(2).replace('.', ',')} aplicado!
+                            </p>
+                          )}
                           <p className="text-[9px] text-amber-600/70 font-bold mt-1 font-black uppercase tracking-widest leading-none">Pagamento único via PIX</p>
                         </div>
 
-                        <div className="flex flex-col gap-3">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Seu CPF (obrigatório para PIX)</label>
+                        {/* ─── COUPON FIELD ─── */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 px-1">
+                            <Tag size={10} />
+                            Tem um cupom de parceiro?
+                          </label>
+                          <div className="flex gap-2">
                             <input
                               type="text"
-                              placeholder="000.000.000-00"
-                              value={taxId}
-                              onChange={handleTaxIdChange}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all outline-none"
+                              placeholder="Ex: JOAO50"
+                              value={couponCode}
+                              onChange={(e) => {
+                                setCouponCode(e.target.value.toUpperCase());
+                                if (couponStatus !== 'idle') {
+                                  setCouponStatus('idle');
+                                  setCouponMessage('');
+                                }
+                              }}
+                              onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                              disabled={couponStatus === 'valid'}
+                              className={`flex-1 h-11 px-4 rounded-xl border text-sm font-bold outline-none transition-all ${
+                                couponStatus === 'valid'
+                                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                  : couponStatus === 'invalid'
+                                  ? 'border-red-300 bg-red-50 text-red-700'
+                                  : 'border-slate-200 bg-white text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/10'
+                              }`}
                             />
+                            <button
+                              type="button"
+                              onClick={handleApplyCoupon}
+                              disabled={couponStatus === 'loading' || couponStatus === 'valid' || !couponCode.trim()}
+                              className="h-11 px-4 bg-slate-900 text-white text-xs font-black rounded-xl hover:bg-slate-700 transition-all disabled:opacity-40 flex items-center gap-1.5 whitespace-nowrap"
+                            >
+                              {couponStatus === 'loading' ? <Loader2 size={14} className="animate-spin" /> : 'Aplicar'}
+                            </button>
                           </div>
 
+                          {/* Coupon feedback */}
+                          <AnimatePresence>
+                            {couponStatus === 'valid' && (
+                              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center gap-2 text-emerald-600 text-[10px] font-black uppercase tracking-widest px-1">
+                                <CheckCircle2 size={12} />
+                                {couponMessage}
+                              </motion.div>
+                            )}
+                            {couponStatus === 'invalid' && (
+                              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest px-1">
+                                <AlertCircle size={12} />
+                                {couponMessage}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* CPF field */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Seu CPF (obrigatório para PIX)</label>
+                          <input
+                            type="text"
+                            placeholder="000.000.000-00"
+                            value={taxId}
+                            onChange={handleTaxIdChange}
+                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all outline-none"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-3">
                           <button
                             onClick={async () => {
                               if (taxId.replace(/\D/g, '').length < 11) {
                                 alert("Por favor, informe um CPF válido para gerar o PIX.");
                                 return;
                               }
-                              
                               setIsGeneratingPix(true);
                               try {
-                                  const res = await fetch('/api/create', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ 
-                                      amount: 1690, 
-                                      externalId: savedLeadId,
-                                      taxId: taxId.replace(/\D/g, ''),
-                                      name: `${formData.nome} ${formData.sobrenome}`,
-                                      email: formData.email,
-                                      cellphone: formData.whatsapp.replace(/\D/g, '')
-                                    })
-                                  });
-                                
+                                const res = await fetch('/api/create', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    amount: Math.round(finalAmount * 100),
+                                    externalId: savedLeadId,
+                                    taxId: taxId.replace(/\D/g, ''),
+                                    name: `${formData.nome} ${formData.sobrenome}`,
+                                    email: formData.email,
+                                    cellphone: formData.whatsapp.replace(/\D/g, '')
+                                  })
+                                });
+
                                 const contentType = res.headers.get('content-type');
                                 if (contentType && contentType.includes('application/json')) {
                                   const data = await res.json();
                                   if (!res.ok) throw new Error(data.message || 'Erro no servidor');
-                                  
                                   setCheckoutData(data);
                                   setPaymentStatus('PENDING');
                                 } else {
@@ -592,7 +681,7 @@ export default function ProfessionalForm() {
                           >
                             {isGeneratingPix ? <Loader2 className="animate-spin" /> : <><Crown size={20} /> QUERO SER VIP AGORA</>}
                           </button>
-                          
+
                           <button
                             onClick={() => {
                               setShowVIPOffer(false);
@@ -608,19 +697,19 @@ export default function ProfessionalForm() {
                         </div>
                       </>
                     ) : (
-                      <div className="text-center space-y-6 py-4 animate-in fade-in zoom-in duration-500">
+                      /* ─── PIX Screen ─── */
+                      <div className="text-center space-y-5 py-2 animate-in fade-in zoom-in duration-500">
                         <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">Escaneie o QR Code</h4>
-                        
-                        <div className="w-56 h-56 mx-auto bg-slate-50 p-4 rounded-[2rem] border-2 border-primary/20 shadow-inner flex items-center justify-center relative group">
-                          {/* We check where the QR is, AbacatePay v2 uses .pix.qrCode or .checkoutUrl */}
+
+                        <div className="w-52 h-52 mx-auto bg-slate-50 p-3 rounded-[2rem] border-2 border-primary/20 shadow-inner flex items-center justify-center relative group">
                           <img src={checkoutData?.brCodeBase64} alt="PIX" className="w-full h-full rounded-xl" />
                           <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-[2rem]">
                             <p className="text-[10px] font-black tracking-widest text-primary">AGUARDANDO PAGAMENTO...</p>
                           </div>
                         </div>
 
-                        <div className="space-y-4 max-w-sm mx-auto">
-                          <button 
+                        <div className="space-y-3 max-w-sm mx-auto">
+                          <button
                             onClick={() => {
                               navigator.clipboard.writeText(checkoutData?.brCode || "");
                               setCopied(true);
@@ -630,36 +719,42 @@ export default function ProfessionalForm() {
                               copied ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                             }`}
                           >
-                            {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />} 
+                            {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
                             {copied ? 'CÓDIGO COPIADO!' : 'COPIAR CÓDIGO PIX'}
                           </button>
 
-                          <div className="flex items-center gap-3 justify-center text-slate-400 text-[10px] font-black tracking-widest">
+                          {/* ─── Taxa AbacatePay ─── */}
+                          <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-100">
+                            <span>Valor: <strong className="text-slate-600">R${finalAmount.toFixed(2).replace('.', ',')}</strong></span>
+                            <span className="text-slate-300">|</span>
+                            <span>Taxa: <strong className="text-slate-600">R$0,80</strong> (AbacatePay)</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 justify-center text-slate-400 text-[10px] font-black tracking-widest">
                             <Loader2 className="animate-spin w-4 h-4 text-primary" />
                             SISTEMA VERIFICANDO PAGAMENTO...
                           </div>
                         </div>
 
-                        <button 
-                           onClick={() => setPaymentStatus('IDLE')}
-                           className="text-slate-400 font-bold text-[10px] uppercase tracking-widest underline underline-offset-4"
-                        >
-                           Voltar para o plano normal
+                        <button onClick={() => setPaymentStatus('IDLE')}
+                          className="text-slate-400 font-bold text-[10px] uppercase tracking-widest underline underline-offset-4">
+                          Voltar para o plano normal
                         </button>
                       </div>
                     )}
                   </div>
                 </>
               ) : (
+                /* ─── Success Screen ─── */
                 <div className="p-20 text-center space-y-8 animate-in zoom-in duration-500">
-                   <div className="w-24 h-24 bg-yellow-100 text-yellow-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl rotate-12">
-                      <Crown size={48} />
-                   </div>
-                   <div className="space-y-2">
-                      <h3 className="text-4xl font-black text-slate-900 tracking-tight">PARABÉNS, VIP! 💎</h3>
-                      <p className="text-slate-500 font-bold text-lg">Seu pagamento foi confirmado com sucesso.</p>
-                   </div>
-                   <p className="text-xs font-black text-primary uppercase tracking-[0.4em] animate-pulse">Preparamos sua vaga no grupo VIP...</p>
+                  <div className="w-24 h-24 bg-yellow-100 text-yellow-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl rotate-12">
+                    <Crown size={48} />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-4xl font-black text-slate-900 tracking-tight">PARABÉNS, VIP! 💎</h3>
+                    <p className="text-slate-500 font-bold text-lg">Seu pagamento foi confirmado com sucesso.</p>
+                  </div>
+                  <p className="text-xs font-black text-primary uppercase tracking-[0.4em] animate-pulse">Preparamos sua vaga no grupo VIP...</p>
                 </div>
               )}
             </motion.div>
