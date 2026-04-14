@@ -84,6 +84,7 @@ export default function AdminDashboard() {
   const [newCoupon, setNewCoupon] = useState({ code: '', discount_type: 'none', discount_value: 0, max_uses: '', partner_id: '' });
   const [savingPartner, setSavingPartner] = useState(false);
   const [savingCoupon, setSavingCoupon] = useState(false);
+  const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
   const [partnerClicks, setPartnerClicks] = useState<any[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
@@ -264,22 +265,64 @@ export default function AdminDashboard() {
     if (!newCoupon.code || !newCoupon.partner_id) return;
     setSavingCoupon(true);
     try {
-      const { error } = await supabase.from('partner_coupons').insert([{
-        partner_id: newCoupon.partner_id,
-        code: newCoupon.code.toUpperCase(),
-        discount_type: newCoupon.discount_type,
-        discount_value: newCoupon.discount_value,
-        max_uses: newCoupon.max_uses ? parseInt(newCoupon.max_uses) : null,
-        is_active: true
-      }]);
-      if (error) throw error;
+      if (editingCouponId) {
+        // Update existing coupon
+        const { error } = await supabase
+          .from('partner_coupons')
+          .update({
+            code: newCoupon.code.toUpperCase(),
+            discount_type: newCoupon.discount_type,
+            discount_value: newCoupon.discount_value,
+            max_uses: newCoupon.max_uses ? parseInt(newCoupon.max_uses) : null,
+          })
+          .eq('id', editingCouponId);
+        
+        if (error) throw error;
+      } else {
+        // Create new coupon
+        const { error } = await supabase.from('partner_coupons').insert([{
+          partner_id: newCoupon.partner_id,
+          code: newCoupon.code.toUpperCase(),
+          discount_type: newCoupon.discount_type,
+          discount_value: newCoupon.discount_value,
+          max_uses: newCoupon.max_uses ? parseInt(newCoupon.max_uses) : null,
+          is_active: true
+        }]);
+        if (error) throw error;
+      }
+
       setNewCoupon({ code: '', discount_type: 'none', discount_value: 0, max_uses: '', partner_id: '' });
+      setEditingCouponId(null);
       setShowNewCouponModal(false);
       await fetchPartners();
     } catch (err: any) {
-      alert('Erro ao criar cupom: ' + err.message);
+      alert('Erro ao salvar cupom: ' + err.message);
     } finally {
       setSavingCoupon(false);
+    }
+  };
+
+  const handleEditCouponClick = (coupon: any) => {
+    setNewCoupon({
+      code: coupon.code,
+      discount_type: coupon.discount_type,
+      discount_value: coupon.discount_value,
+      max_uses: coupon.max_uses?.toString() || '',
+      partner_id: coupon.partner_id
+    });
+    setEditingCouponId(coupon.id);
+    setShowNewCouponModal(true);
+  };
+
+  const handleDeleteCoupon = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este cupom permanentemente?')) return;
+    try {
+      const { error } = await supabase.from('partner_coupons').delete().eq('id', id);
+      if (error) throw error;
+      await fetchPartners();
+      alert('Cupom excluído com sucesso! 🗑️');
+    } catch (err: any) {
+      alert('Erro ao excluir cupom: ' + err.message);
     }
   };
 
@@ -1063,7 +1106,7 @@ export default function AdminDashboard() {
                     className="h-10 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white font-black rounded-xl text-xs hover:border-primary hover:text-primary transition-all flex items-center gap-2">
                     <Tag size={14} /> Novo Cupom
                   </button>
-                  <button onClick={() => setShowNewPartnerModal(true)}
+                  <button onClick={() => { setNewPartner({ name: '', email: '', whatsapp: '', slug: '', commission_pct: 50 }); setShowNewPartnerModal(true); }}
                     className="h-10 px-5 bg-primary text-white font-black rounded-xl text-xs hover:opacity-90 transition-all flex items-center gap-2">
                     <Plus size={14} /> Novo Parceiro
                   </button>
@@ -1148,19 +1191,43 @@ export default function AdminDashboard() {
                               {partner.partner_coupons?.length === 0 ? (
                                 <p className="text-[11px] text-slate-400 font-bold">Nenhum cupom criado ainda.</p>
                               ) : (
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-3">
                                   {partner.partner_coupons?.map((c: any) => (
-                                    <div key={c.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black ${
-                                      c.is_active ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-100 border-slate-200 text-slate-400 line-through'
+                                    <div key={c.id} className={`flex items-center gap-2 pr-2 pl-3 py-1.5 rounded-xl border text-[10px] font-black group/tag transition-all ${
+                                      c.is_active ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300' : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-white/5 text-slate-400 line-through'
                                     }`}>
                                       <Tag size={10} className="text-primary" />
-                                      {c.code}
+                                      <span className="mr-auto">{c.code}</span>
                                       {c.discount_type !== 'none' && (
                                         <span className="text-emerald-600">
                                           -{c.discount_type === 'percent' ? `${c.discount_value}%` : `R$${c.discount_value}`}
                                         </span>
                                       )}
-                                      <span className="text-slate-400">{c.uses_count}{c.max_uses ? `/${c.max_uses}` : ''} usos</span>
+                                      <span className="text-slate-400 opacity-60">{c.uses_count}{c.max_uses ? `/${c.max_uses}` : ''}</span>
+                                      
+                                      <div className="flex items-center gap-1 border-l border-slate-100 dark:border-white/5 ml-1 pl-2">
+                                        <button 
+                                          onClick={() => { navigator.clipboard.writeText(c.code); alert('Código copiado!'); }}
+                                          title="Copiar Código"
+                                          className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                                        >
+                                          <Copy size={10} />
+                                        </button>
+                                          <button 
+                                            onClick={() => handleEditCouponClick(c)}
+                                            title="Editar Cupom"
+                                            className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:bg-indigo-500/5 transition-all"
+                                          >
+                                            <Settings size={10} />
+                                          </button>
+                                          <button 
+                                            onClick={() => handleDeleteCoupon(c.id)}
+                                            title="Excluir Cupom"
+                                            className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/5 transition-all"
+                                          >
+                                            <Trash2 size={10} />
+                                          </button>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -1225,7 +1292,9 @@ export default function AdminDashboard() {
                       className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
                     <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                       className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
-                      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">Novo Cupom</h3>
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">
+                        {editingCouponId ? 'Editar Cupom' : 'Novo Cupom'}
+                      </h3>
                       <div className="space-y-4">
                         <div className="space-y-1.5">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Parceiro</label>
@@ -1266,11 +1335,11 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-3 mt-8">
-                        <button onClick={() => setShowNewCouponModal(false)}
+                        <button onClick={() => { setShowNewCouponModal(false); setEditingCouponId(null); setNewCoupon({ code: '', discount_type: 'none', discount_value: 0, max_uses: '', partner_id: '' }); }}
                           className="flex-1 h-12 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-500 font-black text-xs hover:bg-slate-50 transition-all">Cancelar</button>
                         <button onClick={handleCreateCoupon} disabled={savingCoupon}
                           className="flex-1 h-12 bg-primary text-white font-black rounded-2xl text-xs hover:opacity-90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
-                          {savingCoupon ? 'Salvando...' : 'Criar Cupom'}
+                          {savingCoupon ? 'Salvando...' : editingCouponId ? 'Salvar Alterações' : 'Criar Cupom'}
                         </button>
                       </div>
                     </motion.div>
