@@ -99,6 +99,7 @@ export default function AdminDashboard() {
   const [notifications, setNotifications] = useState<{id: string, title: string, description: string, time: string, type: 'new' | 'expiry'}[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('admin_theme') === 'dark';
   });
@@ -659,12 +660,23 @@ export default function AdminDashboard() {
 
   return (
     <div className={`flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-500`}>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[45] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar - Premium Animated */}
       <motion.aside 
         initial={false}
-        animate={{ width: isSidebarExpanded ? 256 : 80 }}
+        animate={{ width: isSidebarExpanded || isMobileMenuOpen ? 256 : 80 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="hidden lg:flex flex-col bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-white/5 fixed h-full z-50 overflow-hidden"
+        className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-white/5 fixed h-full z-50 overflow-hidden transition-transform duration-300`}
       >
         {/* Wrapper with conditional width to ensure centering in collapsed state */}
         <div className={`flex flex-col items-center py-8 h-full px-4 ${isSidebarExpanded ? 'w-[256px]' : 'w-[80px]'}`}>
@@ -678,7 +690,7 @@ export default function AdminDashboard() {
                        initial={{ opacity: 0, x: -10 }}
                        animate={{ opacity: 1, x: 0 }}
                        exit={{ opacity: 0, x: 10 }}
-                       src={logoClaro} 
+                       src={isDarkMode ? logoDark : logoClaro} 
                        alt="Logo" 
                        className="h-8 w-auto object-contain" 
                      />
@@ -768,8 +780,8 @@ export default function AdminDashboard() {
         className="hidden lg:flex fixed top-32 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-full items-center justify-center text-slate-400 hover:text-primary transition-all z-[70] group cursor-pointer"
       >
         <motion.div
-          animate={{ rotate: isSidebarExpanded ? 180 : 0 }}
-          transition={{ duration: 0.4, ease: "anticipate" }}
+           animate={{ rotate: isSidebarExpanded ? 180 : 0 }}
+           transition={{ duration: 0.4, ease: "anticipate" }}
         >
            <ChevronRight size={14} className="group-hover:scale-110" />
         </motion.div>
@@ -777,14 +789,17 @@ export default function AdminDashboard() {
 
       {/* Main Content - Synchronized Transition */}
       <motion.main 
-        animate={{ paddingLeft: isSidebarExpanded ? 256 : 80 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="flex-grow flex flex-col min-h-screen transition-colors duration-500"
+        className="flex-grow flex flex-col min-h-screen transition-all duration-500 lg:ml-[var(--sidebar-width)]"
+        style={{ '--sidebar-width': isSidebarExpanded ? '256px' : '80px' } as any}
       >
         {/* Header - Solid & Clean */}
-        <header className="h-24 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 flex items-center justify-between px-10 sticky top-0 z-40 transition-all duration-500 backdrop-blur-md bg-white/80 dark:bg-slate-900/80">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+        <header className="h-24 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 flex items-center justify-between px-4 md:px-10 sticky top-0 z-40 transition-all duration-500 backdrop-blur-md bg-white/80 dark:bg-slate-900/80">
+          <div className="flex items-center gap-3">
+             <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
+                <Menu size={24} />
+             </button>
+            <div>
+              <h1 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               {activeView === 'dashboard' ? 'Painel Geral' : activeView === 'profissionais' ? 'Gestão de Profissionais' : activeView === 'parceiros' ? 'Programa de Parceiros' : 'Configurações'}
             </h1>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Reformaê CRM & Analytics</p>
@@ -876,24 +891,21 @@ export default function AdminDashboard() {
             <div className="w-px h-8 bg-slate-100 dark:bg-white/10 mx-2" />
             
             <div className="group flex items-center gap-4 cursor-pointer">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-black text-slate-900 dark:text-white uppercase leading-none">{adminProfile.name}</p>
-                <p className="text-[10px] font-bold text-primary uppercase mt-1">Administrador</p>
+              <div className="hidden sm:flex flex-col items-end mr-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white mb-0.5">{adminProfile.name}</span>
+                <span className="text-[8px] font-black text-primary uppercase tracking-widest">Administrador</span>
               </div>
-              <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-100 dark:ring-white/5 transition-transform group-hover:scale-105">
-                <img src={adminProfile.avatar} alt="Admin" className="w-full h-full object-cover" />
+              <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 dark:border-white/5 shrink-0">
+                <img src={adminProfile.avatar} alt="Profile" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
         </header>
 
-        {/* Dashboard Body */}
-        <div className="p-8 space-y-10">
-          
+        <div className="flex-grow p-4 md:p-10 transition-all duration-500 pt-8 pb-32">
           {activeView === 'dashboard' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              {/* Section: Metrics Content from previous step but inside dashboard view */}
-              <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+              <section className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-4">
                 <MetricCard title="Total Profissionais" value={metrics.total} icon={Users} color="blue" trend="+12%" />
                 <MetricCard title="Assinantes VIP 💎" value={metrics.vipCount} icon={Crown} color="orange" trend="Premium" />
                 <MetricCard title="Cadastros Hoje" value={metrics.todayCount} icon={UserPlus} color="emerald" trend="Foco do dia" />
@@ -1026,7 +1038,7 @@ export default function AdminDashboard() {
           {activeView === 'profissionais' && (
             <div className="space-y-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-2xl font-black text-slate-900">Gerenciar Leads</h2>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Gerenciar Leads</h2>
                 
                 <div className="flex flex-wrap items-center gap-3">
                   <FilterDropdown 
@@ -1137,7 +1149,7 @@ export default function AdminDashboard() {
           {activeView === 'parceiros' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               {/* Partner Metric Cards */}
-              <section className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-4 gap-4">
+              <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {[{
                   label: 'Parceiros Ativos', value: partners.filter(p => p.is_active).length, color: 'bg-blue-50 text-blue-600'
                 }, {
@@ -1157,7 +1169,7 @@ export default function AdminDashboard() {
               </section>
 
               {/* Revenue breakdown */}
-              <div className="grid lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {[{
                   label: 'Receita Bruta (via parceiros)', value: partnerOrders.filter(o => o.partner_id && o.payment_status === 'paid').reduce((s, o) => s + Number(o.final_amount_paid), 0)
                 }, {
@@ -1173,23 +1185,24 @@ export default function AdminDashboard() {
               </div>
 
               {/* Actions bar */}
-              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h2 className="text-xl font-black text-slate-900 dark:text-white">Parceiros Cadastrados</h2>
                 <div className="flex gap-3">
                   <button onClick={() => { setNewCoupon(c => ({...c, partner_id: ''})); setShowNewCouponModal(true); }}
-                    className="h-10 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white font-black rounded-xl text-xs hover:border-primary hover:text-primary transition-all flex items-center gap-2">
+                    className="h-10 flex-1 sm:flex-none px-4 sm:px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white font-black rounded-xl text-xs hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2">
                     <Tag size={14} /> Novo Cupom
                   </button>
                   <button onClick={() => { setNewPartner({ name: '', email: '', whatsapp: '', slug: '', commission_pct: 50 }); setEditingPartnerId(null); setShowNewPartnerModal(true); }}
-                    className="h-10 px-5 bg-primary text-white font-black rounded-xl text-xs hover:opacity-90 transition-all flex items-center gap-2">
+                    className="h-10 flex-1 sm:flex-none px-4 sm:px-5 bg-primary text-white font-black rounded-xl text-xs hover:opacity-90 transition-all flex items-center justify-center gap-2">
                     <Plus size={14} /> Novo Parceiro
                   </button>
                 </div>
               </div>
 
               {/* Partners table */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden">
-                <div className="grid grid-cols-12 px-6 py-4 bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/5 overflow-x-auto w-full">
+                <div className="min-w-[800px]">
+                  <div className="grid grid-cols-12 px-6 py-4 bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <div className="col-span-3">Parceiro</div>
                   <div className="col-span-2">Link / Slug</div>
                   <div className="col-span-1 text-center">Cliques</div>
@@ -1318,6 +1331,7 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })}
+                </div>
               </div>
 
               <AnimatePresence>
@@ -1430,18 +1444,18 @@ export default function AdminDashboard() {
           {activeView === 'settings' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8 pb-20">
                <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Configurações</h2>
-                  <p className="text-slate-400 text-sm font-medium mt-1">Gerencie suas informações pessoais e segurança da conta.</p>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Configurações</h2>
+                  <p className="text-slate-400 dark:text-slate-500 text-sm font-medium mt-1">Gerencie suas informações pessoais e segurança da conta.</p>
                </div>
 
                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Left Column: Avatar & Quick Info */}
                   <div className="space-y-4">
-                     <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center">
-                        <div className="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden border border-slate-200">
+                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 p-6 text-center">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10">
                            <img src={adminProfile.avatar} alt="Avatar" className="w-full h-full object-cover" />
                         </div>
-                        <h4 className="font-black text-slate-900 text-sm">{adminProfile.name}</h4>
+                        <h4 className="font-black text-slate-900 dark:text-white text-sm">{adminProfile.name}</h4>
                         <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Administrador Master</p>
                         <input
                           type="file"
@@ -1452,60 +1466,60 @@ export default function AdminDashboard() {
                         />
                         <button
                           onClick={() => document.getElementById('avatar-upload')?.click()}
-                          className="mt-5 w-full h-10 bg-slate-900 text-white rounded-xl text-xs font-black hover:bg-slate-700 transition-all"
+                          className="mt-5 w-full h-10 bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 rounded-xl text-xs font-black hover:bg-slate-700 dark:hover:bg-slate-700 transition-all border border-transparent dark:border-white/10"
                         >
                           Alterar Avatar
                         </button>
                      </div>
 
-                     <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Status da Conta</h5>
+                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 p-5">
+                        <h5 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Status da Conta</h5>
                         <div className="flex items-center gap-2 mb-1">
                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                           <span className="text-xs font-bold text-slate-700">Conta Verificada</span>
+                           <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Conta Verificada</span>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-medium">Último acesso: Hoje às 11:45</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Último acesso: Hoje às 11:45</p>
                      </div>
                   </div>
 
                   {/* Right Column: Forms */}
                   <div className="lg:col-span-2 space-y-4">
                      {/* Personal Info */}
-                     <div className="bg-white rounded-2xl border border-slate-200 p-7">
-                        <div className="flex items-center gap-3 mb-6 pb-5 border-b border-slate-100">
-                           <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 p-7">
+                        <div className="flex items-center gap-3 mb-6 pb-5 border-b border-slate-100 dark:border-white/5">
+                           <div className="w-8 h-8 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center">
                               <User size={16} />
                            </div>
-                           <h4 className="font-black text-slate-900 tracking-tight text-sm">Dados Pessoais</h4>
+                           <h4 className="font-black text-slate-900 dark:text-white tracking-tight text-sm">Dados Pessoais</h4>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nome Completo</label>
+                              <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Nome Completo</label>
                               <input
                                  type="text"
                                  value={adminProfile.name}
                                  onChange={(e) => setAdminProfile(p => ({ ...p, name: e.target.value }))}
-                                 className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                                 className="w-full h-11 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                               />
                            </div>
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">E-mail Comercial</label>
+                              <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">E-mail Comercial</label>
                               <input
                                  type="email"
                                  value={adminProfile.email}
-                                 className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none opacity-60 cursor-not-allowed"
+                                 className="w-full h-11 px-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none opacity-60 cursor-not-allowed"
                                  disabled
                               />
                            </div>
                            <div className="md:col-span-2 space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mini Biografia</label>
+                              <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Mini Biografia</label>
                               <textarea
                                  rows={3}
                                  value={adminProfile.bio}
                                  onChange={(e) => setAdminProfile(p => ({ ...p, bio: e.target.value }))}
                                  placeholder="Conte um pouco sobre suas responsabilidades..."
-                                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
+                                 className="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
                               />
                            </div>
                         </div>
@@ -1520,26 +1534,26 @@ export default function AdminDashboard() {
                      </div>
 
                      {/* Security */}
-                     <div className="bg-white rounded-2xl border border-slate-200 p-7">
-                        <div className="flex items-center gap-3 mb-6 pb-5 border-b border-slate-100">
-                           <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center">
+                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 p-7">
+                        <div className="flex items-center gap-3 mb-6 pb-5 border-b border-slate-100 dark:border-white/5">
+                           <div className="w-8 h-8 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-lg flex items-center justify-center">
                               <Shield size={16} />
                            </div>
-                           <h4 className="font-black text-slate-900 tracking-tight text-sm">Segurança</h4>
+                           <h4 className="font-black text-slate-900 dark:text-white tracking-tight text-sm">Segurança</h4>
                         </div>
 
                         <div className="space-y-2">
                            <button
                              onClick={() => alert('Um link para redefinir sua senha foi enviado para seu e-mail! 🔐')}
-                             className="w-full h-12 px-5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between group hover:border-slate-300 hover:bg-white transition-all"
+                             className="w-full h-12 px-5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-between group hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/10 transition-all"
                            >
-                              <span className="text-sm font-bold text-slate-700">Alterar senha de acesso</span>
-                              <ChevronRight size={16} className="text-slate-300 group-hover:text-primary transition-colors" />
+                              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Alterar senha de acesso</span>
+                              <ChevronRight size={16} className="text-slate-300 dark:text-slate-600 group-hover:text-primary transition-colors" />
                            </button>
-                           <button className="w-full h-12 px-5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between group hover:border-slate-300 hover:bg-white transition-all">
-                              <span className="text-sm font-bold text-slate-700">Autenticação em dois fatores</span>
-                              <div className="w-9 h-5 bg-slate-200 rounded-full relative flex items-center px-0.5">
-                                 <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                           <button className="w-full h-12 px-5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-between group hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/10 transition-all">
+                              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Autenticação em dois fatores</span>
+                              <div className="w-9 h-5 bg-slate-200 dark:bg-slate-800 rounded-full relative flex items-center px-0.5">
+                                 <div className="w-4 h-4 bg-white dark:bg-slate-400 rounded-full shadow-sm" />
                               </div>
                            </button>
                         </div>
