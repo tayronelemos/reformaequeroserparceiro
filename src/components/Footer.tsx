@@ -74,6 +74,7 @@ export function Footer() {
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Navegação</h4>
             <ul className="space-y-4 font-bold text-slate-600">
               <li><a href="/" className="hover:text-primary transition-colors">Home</a></li>
+              <li><a href="/trabalhe-conosco" className="hover:text-primary transition-colors">Trabalhe Conosco</a></li>
               <li><a href="#app" className="hover:text-primary transition-colors">O App</a></li>
               <li><a href="#services" className="hover:text-primary transition-colors">Serviços</a></li>
               <li><a href="#oportunidade" className="hover:text-primary transition-colors">Oportunidade</a></li>

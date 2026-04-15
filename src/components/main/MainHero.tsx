@@ -40,7 +40,7 @@ export default function MainHero() {
               
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 <a
-                href="/parceiros"
+                href="/trabalhe-conosco"
                 className="px-8 py-4 bg-slate-900 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-2xl shadow-slate-200 flex items-center gap-3 group"
               >
                 Trabalhe Conosco
