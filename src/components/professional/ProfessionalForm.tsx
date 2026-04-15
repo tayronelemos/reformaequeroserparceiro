@@ -134,40 +134,86 @@ export default function ProfessionalForm() {
     setCouponStatus('loading');
     setCouponMessage('');
 
+    const normalizedCode = couponCode.trim().toUpperCase();
+
     try {
-      const res = await fetch(`/api/validate-coupon?code=${couponCode.trim().toUpperCase()}`);
-      const data = await res.json();
-
-      if (data.valid) {
-        setCouponStatus('valid');
-        setCouponMessage(data.message);
-        setCouponId(data.coupon_id);
-        setCouponPartnerId(data.partner_id);
-        setCouponPartnerName(data.partner_name);
-
-        // Override partner from URL if coupon provides one
-        if (data.partner_id) {
-          setPartnerId(data.partner_id);
-          setPartnerName(data.partner_name);
+      // Intentar via API primeiro
+      const res = await fetch(`/api/validate-coupon?code=${normalizedCode}`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.valid) {
+          applyCouponData(data);
+          return;
+        } else {
+          setCouponStatus('invalid');
+          setCouponMessage(data.message || 'Cupom inválido.');
+          return;
         }
-
-        // Apply discount
-        if (data.discount_type === 'fixed' && data.discount_value > 0) {
-          const disc = Math.min(data.discount_value, GROSS_AMOUNT);
-          setDiscountAmount(disc);
-          setFinalAmount(parseFloat((GROSS_AMOUNT - disc).toFixed(2)));
-        } else if (data.discount_type === 'percent' && data.discount_value > 0) {
-          const disc = parseFloat(((GROSS_AMOUNT * data.discount_value) / 100).toFixed(2));
-          setDiscountAmount(disc);
-          setFinalAmount(parseFloat((GROSS_AMOUNT - disc).toFixed(2)));
-        }
-      } else {
-        setCouponStatus('invalid');
-        setCouponMessage(data.message || 'Cupom inválido.');
       }
+      
+      // Se a API falhar (404 no localhost), tenta busca direta no Supabase (Fallback necessário após unificação)
+      console.log('[Coupon] API não disponível localmente, tentando busca direta no Supabase...');
+      const { data: coupon, error } = await supabase
+        .from('partner_coupons')
+        .select(`
+          id, code, discount_type, discount_value, max_uses, uses_count, is_active, expires_at, partner_id,
+          partners ( id, name, is_active )
+        `)
+        .eq('code', normalizedCode)
+        .single();
+
+      if (error || !coupon) {
+        setCouponStatus('invalid');
+        setCouponMessage('Cupom não encontrado.');
+        return;
+      }
+
+      // Validações básicas no cliente (fallback)
+      if (!coupon.is_active || !coupon.partners?.is_active) {
+        setCouponStatus('invalid');
+        setCouponMessage('Este cupom ou parceiro está inativo.');
+        return;
+      }
+
+      const data = {
+        valid: true,
+        coupon_id: coupon.id,
+        partner_id: coupon.partners?.id,
+        partner_name: coupon.partners?.name,
+        discount_type: coupon.discount_type,
+        discount_value: coupon.discount_value,
+        message: `Cupom aplicado! Parceiro: ${coupon.partners?.name}`
+      };
+      
+      applyCouponData(data);
+
     } catch (err) {
       setCouponStatus('invalid');
       setCouponMessage('Erro ao validar cupom. Tente novamente.');
+    }
+  };
+
+  const applyCouponData = (data: any) => {
+    setCouponStatus('valid');
+    setCouponMessage(data.message);
+    setCouponId(data.coupon_id);
+    setCouponPartnerId(data.partner_id);
+    setCouponPartnerName(data.partner_name);
+
+    if (data.partner_id) {
+      setPartnerId(data.partner_id);
+      setPartnerName(data.partner_name);
+    }
+
+    if (data.discount_type === 'fixed' && data.discount_value > 0) {
+      const disc = Math.min(data.discount_value, GROSS_AMOUNT);
+      setDiscountAmount(disc);
+      setFinalAmount(parseFloat((GROSS_AMOUNT - disc).toFixed(2)));
+    } else if (data.discount_type === 'percent' && data.discount_value > 0) {
+      const disc = parseFloat(((GROSS_AMOUNT * data.discount_value) / 100).toFixed(2));
+      setDiscountAmount(disc);
+      setFinalAmount(parseFloat((GROSS_AMOUNT - disc).toFixed(2)));
     }
   };
 

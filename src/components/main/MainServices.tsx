@@ -71,9 +71,9 @@ const serviceCategories = [
   }
 ];
 
-export default function ServiceGrid() {
+export default function MainServices() {
   return (
-    <section className="py-24 bg-slate-50 overflow-hidden">
+    <section id="services" className="py-24 bg-slate-50 overflow-hidden">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="max-w-4xl mx-auto text-center mb-16">
@@ -87,12 +87,12 @@ export default function ServiceGrid() {
             Mais de 30 categorias disponíveis
           </motion.div>
           
-          <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 leading-[1.05] tracking-tight">
+          <h2 className="text-4xl md:text-[5rem] font-black text-slate-900 mb-6 leading-[0.9] tracking-tight">
             Todos os serviços que movimentam <br className="hidden md:block" />
-            sua região, <span className="text-[#2C47DD]">em um só lugar.</span>
+            sua região, <span className="text-[#2C47DD] italic">em um só lugar.</span>
           </h2>
           
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed font-medium">
             Do pequeno reparo à reforma completa, o Reformaê conecta clientes a profissionais em diversas categorias.
           </p>
         </div>
@@ -122,7 +122,7 @@ export default function ServiceGrid() {
                       className="w-[calc(50%-0.375rem)] sm:w-[160px] md:w-[180px] lg:w-[190px] flex-shrink-0 group bg-white p-4 md:p-6 rounded-[1.25rem] md:rounded-[1.5rem] border border-slate-100 hover:border-[#2C47DD]/20 transition-all duration-300 relative cursor-default"
                     >
                       <div className="flex flex-col items-center text-center">
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-[#2C47DD]/5 flex items-center justify-center mb-3 md:mb-4 group-hover:bg-[#2C47DD] transition-all duration-500">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-[#2C47DD]/5 flex items-center justify-center mb-3 md:mb-4 group-hover:bg-[#2C47DD] transition-all duration-500 border border-slate-100/50">
                           <Icon className="w-5 h-5 md:w-6 md:h-6 text-[#2C47DD] group-hover:text-white transition-colors" />
                         </div>
                         <span className="text-[10px] md:text-sm font-bold text-slate-700 group-hover:text-[#2C47DD] transition-colors line-clamp-2 min-h-[1lh]">

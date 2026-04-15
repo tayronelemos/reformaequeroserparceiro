@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, Instagram, Facebook, Linkedin, Mail, Sparkles, MessageCircle, ChevronDown, Menu, X } from 'lucide-react';
-import logoDark from '../assets/images/logo-dark.png';
+import logoClaro from '../assets/images/logo-claro.png';
 import logoCriativos from '../assets/images/criativosbrasil.png';
 
 export function FinalCTA() {
@@ -56,7 +56,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
           <div className="md:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="mb-8">
-              <img src={logoDark} alt="Reformaê" className="h-10 w-auto" />
+              <img src={logoClaro} alt="Reformaê" className="h-10 w-auto" />
             </div>
             <p className="text-slate-500 max-w-sm mb-10 text-lg leading-relaxed">
               A maior plataforma de conexão inteligente para o mercado de construção civil e reformas do Brasil.
@@ -171,7 +171,7 @@ export function Navbar() {
             : 'bg-white border-transparent'
         }`}>
           <div className="flex items-center">
-            <img src={logoDark} alt="Reformaê" className="h-6 md:h-8 w-auto" />
+            <img src={logoClaro} alt="Reformaê" className="h-6 md:h-8 w-auto" />
           </div>
           
           {/* Desktop Menu */}

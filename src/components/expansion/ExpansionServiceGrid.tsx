@@ -71,7 +71,7 @@ const serviceCategories = [
   }
 ];
 
-export default function ServiceGrid() {
+export default function ExpansionServiceGrid() {
   return (
     <section className="py-24 bg-slate-50 overflow-hidden">
       <div className="container mx-auto px-4">

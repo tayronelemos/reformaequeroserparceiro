@@ -112,9 +112,24 @@ export default function AdminDashboard() {
     }
   }, [isDarkMode]);
   
-  // Persistence Logic: Load from LocalStorage
+  // Persistence Logic: Load from Storage (prioritize session, fallback to local)
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('admin_logged') === 'true';
+    const session = sessionStorage.getItem('admin_logged') === 'true';
+    if (session) return true;
+    
+    // Check local storage with expiration
+    const local = localStorage.getItem('admin_logged') === 'true';
+    const loginTime = localStorage.getItem('admin_login_time');
+    if (local && loginTime) {
+      const now = new Date().getTime();
+      const oneDay = 24 * 60 * 60 * 1000;
+      if (now - parseInt(loginTime) < oneDay) return true;
+      
+      // Expired
+      localStorage.removeItem('admin_logged');
+      localStorage.removeItem('admin_login_time');
+    }
+    return false;
   });
   
   const [adminProfile, setAdminProfile] = useState(() => {
@@ -127,6 +142,7 @@ export default function AdminDashboard() {
     };
   });
 
+  const [rememberMe, setRememberMe] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -136,10 +152,24 @@ export default function AdminDashboard() {
     localStorage.setItem('admin_profile', JSON.stringify(adminProfile));
   }, [adminProfile]);
 
-  // Sync Auth to LocalStorage
+  // Sync Auth to Storage
   useEffect(() => {
-    localStorage.setItem('admin_logged', isLoggedIn.toString());
-  }, [isLoggedIn]);
+    if (isLoggedIn) {
+      if (rememberMe) {
+        localStorage.setItem('admin_logged', 'true');
+        localStorage.setItem('admin_login_time', new Date().getTime().toString());
+        sessionStorage.removeItem('admin_logged');
+      } else {
+        sessionStorage.setItem('admin_logged', 'true');
+        localStorage.removeItem('admin_logged');
+        localStorage.removeItem('admin_login_time');
+      }
+    } else {
+      sessionStorage.removeItem('admin_logged');
+      localStorage.removeItem('admin_logged');
+      localStorage.removeItem('admin_login_time');
+    }
+  }, [isLoggedIn, rememberMe]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -543,8 +573,14 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex items-center gap-2 py-2">
-                <input type="checkbox" id="remember" className="w-4 h-4 accent-primary" />
-                <label htmlFor="remember" className="text-xs font-bold text-slate-500">Lembrar de mim</label>
+                <input 
+                  type="checkbox" 
+                  id="remember" 
+                  className="w-4 h-4 accent-primary" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <label htmlFor="remember" className="text-xs font-bold text-slate-500 cursor-pointer">Lembrar de mim</label>
               </div>
               
               {loginError && (
@@ -673,7 +709,12 @@ export default function AdminDashboard() {
               )}
             </button>
             <button 
-              onClick={() => setIsLoggedIn(false)}
+              onClick={() => {
+                sessionStorage.clear();
+                localStorage.removeItem('admin_logged');
+                localStorage.removeItem('admin_login_time');
+                setIsLoggedIn(false);
+              }}
               className={`w-full h-12 flex items-center ${isSidebarExpanded ? 'px-4' : 'justify-center'} text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-2xl transition-all group`}
               title="Sair"
             >

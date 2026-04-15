@@ -5,6 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Home from './pages/Home';
+import PartnerLanding from './pages/PartnerLanding';
+import ExpansionLanding from './pages/ExpansionLanding';
 import ProfessionalLanding from './pages/ProfessionalLanding';
 import AdminDashboard from './pages/AdminDashboard';
 import WhatsAppBridge from './pages/WhatsAppBridge';
@@ -67,6 +69,12 @@ export default function App() {
   // Routing Logic
   const renderPage = () => {
     switch (currentPath) {
+      case '/parceiros':
+      case '/parceiros/':
+        return <PartnerLanding />;
+      case '/expansao':
+      case '/expansao/':
+        return <ExpansionLanding />;
       case '/trabalhe-conosco':
       case '/trabalhe-conosco/':
         return <ProfessionalLanding />;
