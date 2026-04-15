@@ -42,6 +42,7 @@ import {
   Crown,
   Bell,
   Check,
+  Menu,
   AlertCircle as AlertIcon // Just in case
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
