@@ -800,9 +800,10 @@ export default function AdminDashboard() {
              </button>
             <div>
               <h1 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {activeView === 'dashboard' ? 'Painel Geral' : activeView === 'profissionais' ? 'Gestão de Profissionais' : activeView === 'parceiros' ? 'Programa de Parceiros' : 'Configurações'}
-            </h1>
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Reformaê CRM & Analytics</p>
+                {activeView === 'dashboard' ? 'Painel Geral' : activeView === 'profissionais' ? 'Gestão de Profissionais' : activeView === 'parceiros' ? 'Programa de Parceiros' : 'Configurações'}
+              </h1>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Reformaê CRM & Analytics</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-6">
