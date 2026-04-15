@@ -10,7 +10,7 @@ const stats = [
 
 export default function MainExpansion() {
   return (
-    <section id="joao-pessoa" className="py-20 bg-slate-900 overflow-hidden relative border-t border-white/5">
+    <section id="expansao" className="py-20 bg-slate-900 overflow-hidden relative border-t border-white/5">
       {/* Subtle center glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary/15 rounded-full blur-[120px] pointer-events-none" />
 
@@ -26,7 +26,7 @@ export default function MainExpansion() {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 text-[10px] font-black tracking-[0.2em] text-primary uppercase bg-white/5 rounded-full border border-white/10">
               <Rocket className="w-3 h-3" />
-              Expansão Nacional 2024
+              Expansão Nacional 2026
             </div>
 
             <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight leading-[1.05]">
@@ -91,7 +91,7 @@ export default function MainExpansion() {
             <div className="flex items-center gap-3 px-5 py-3 bg-green-500/10 border border-green-500/20 rounded-2xl">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
               <MapPin className="w-4 h-4 text-green-400" />
-              <span className="text-sm font-bold text-green-300">João Pessoa — operação 100% validada</span>
+              <span className="text-sm font-bold text-green-300">Expansão Nacional — operação 100% validada</span>
             </div>
           </motion.div>
 

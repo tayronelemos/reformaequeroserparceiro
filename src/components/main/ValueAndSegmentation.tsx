@@ -43,7 +43,7 @@ export default function ValueAndSegmentation() {
       </section>
 
       {/* Segmentation Section */}
-      <section className="py-28 bg-white relative overflow-hidden">
+      <section id="oportunidade" className="py-28 bg-white relative overflow-hidden">
         {/* Subtle background texture */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(44,71,221,0.04),_transparent_60%)] pointer-events-none" />
 

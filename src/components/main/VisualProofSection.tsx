@@ -25,13 +25,13 @@ export default function VisualProofSection() {
               
               {/* Overlay Badges */}
               <div className="absolute bottom-10 left-10 right-10 flex flex-wrap gap-4">
-                <div className="px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white text-sm font-bold flex items-center gap-2 border border-white/30">
+                <div className="px-4 py-2 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-bold flex items-center gap-2 border border-white/10 shadow-2xl">
                   <ShieldCheck className="w-4 h-4 text-green-400" />
                   Profissionais Verificados
                 </div>
-                <div className="px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white text-sm font-bold flex items-center gap-2 border border-white/30">
+                <div className="px-4 py-2 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-bold flex items-center gap-2 border border-white/10 shadow-2xl">
                   <MapPin className="w-4 h-4 text-primary" />
-                  Atuação em João Pessoa
+                  Expansão Nacional
                 </div>
               </div>
             </div>

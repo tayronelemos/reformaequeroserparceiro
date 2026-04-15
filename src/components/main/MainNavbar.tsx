@@ -16,9 +16,9 @@ export default function MainNavbar() {
   const menuItems = [
     { label: 'Home', href: '/' },
     { label: 'O App', href: '#app' },
+    { label: 'Serviços', href: '#services' },
     { label: 'Oportunidade', href: '#oportunidade' },
-    { label: 'João Pessoa', href: '#joao-pessoa' },
-    { label: 'Planos', href: '#planos' },
+    { label: 'Expansão', href: '#expansao' },
     { label: 'FAQ', href: '#faq' },
   ];
 
