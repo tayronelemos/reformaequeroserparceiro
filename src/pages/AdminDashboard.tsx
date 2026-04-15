@@ -79,6 +79,7 @@ export default function AdminDashboard() {
   const [partnerCommissions, setPartnerCommissions] = useState<any[]>([]);
   const [showNewPartnerModal, setShowNewPartnerModal] = useState(false);
   const [newPartner, setNewPartner] = useState({ name: '', email: '', whatsapp: '', slug: '', commission_pct: 50 });
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
   const [showNewCouponModal, setShowNewCouponModal] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [newCoupon, setNewCoupon] = useState({ code: '', discount_type: 'none', discount_value: 0, max_uses: '', partner_id: '' });
@@ -244,10 +245,18 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRefreshData = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchLeads(),
+      fetchPartners()
+    ]);
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (isLoggedIn) {
-      fetchLeads();
-      fetchPartners();
+      handleRefreshData();
     }
   }, [isLoggedIn]);
 
@@ -272,23 +281,47 @@ export default function AdminDashboard() {
     if (!newPartner.name || !newPartner.email || !newPartner.slug) return;
     setSavingPartner(true);
     try {
-      const { error } = await supabase.from('partners').insert([{
+      const partnerData = {
         name: newPartner.name,
         email: newPartner.email,
         whatsapp: newPartner.whatsapp,
         slug: newPartner.slug.toLowerCase().replace(/\s+/g, '-'),
         commission_pct: newPartner.commission_pct,
         is_active: true
-      }]);
-      if (error) throw error;
+      };
+
+      if (editingPartnerId) {
+        const { error } = await supabase
+          .from('partners')
+          .update(partnerData)
+          .eq('id', editingPartnerId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('partners').insert([partnerData]);
+        if (error) throw error;
+      }
+
       setNewPartner({ name: '', email: '', whatsapp: '', slug: '', commission_pct: 50 });
+      setEditingPartnerId(null);
       setShowNewPartnerModal(false);
       await fetchPartners();
     } catch (err: any) {
-      alert('Erro ao criar parceiro: ' + err.message);
+      alert('Erro ao salvar parceiro: ' + err.message);
     } finally {
       setSavingPartner(false);
     }
+  };
+
+  const handleEditPartnerClick = (partner: any) => {
+    setNewPartner({
+      name: partner.name,
+      email: partner.email,
+      whatsapp: partner.whatsapp || '',
+      slug: partner.slug,
+      commission_pct: partner.commission_pct
+    });
+    setEditingPartnerId(partner.id);
+    setShowNewPartnerModal(true);
   };
 
   const handleCreateCoupon = async () => {
@@ -824,10 +857,10 @@ export default function AdminDashboard() {
               </div>
 
               <button 
-                onClick={fetchLeads}
+                onClick={handleRefreshData}
                 disabled={loading}
                 className="w-11 h-11 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 text-slate-400 rounded-xl flex items-center justify-center hover:text-primary transition-all active:scale-95 disabled:opacity-50"
-                title="Sincronizar"
+                title="Sincronizar Tudo"
               >
                 <ArrowUpDown size={18} className={loading ? "animate-spin" : ""} />
               </button>
@@ -1147,7 +1180,7 @@ export default function AdminDashboard() {
                     className="h-10 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white font-black rounded-xl text-xs hover:border-primary hover:text-primary transition-all flex items-center gap-2">
                     <Tag size={14} /> Novo Cupom
                   </button>
-                  <button onClick={() => { setNewPartner({ name: '', email: '', whatsapp: '', slug: '', commission_pct: 50 }); setShowNewPartnerModal(true); }}
+                  <button onClick={() => { setNewPartner({ name: '', email: '', whatsapp: '', slug: '', commission_pct: 50 }); setEditingPartnerId(null); setShowNewPartnerModal(true); }}
                     className="h-10 px-5 bg-primary text-white font-black rounded-xl text-xs hover:opacity-90 transition-all flex items-center gap-2">
                     <Plus size={14} /> Novo Parceiro
                   </button>
@@ -1203,6 +1236,11 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="col-span-2 flex items-center justify-end gap-2 pr-2">
+                          <button onClick={() => handleEditPartnerClick(partner)}
+                            className="h-8 w-8 flex items-center justify-center text-slate-400 hover:text-primary bg-slate-50 dark:bg-white/5 rounded-lg transition-colors"
+                            title="Editar Dados">
+                            <Settings size={14} />
+                          </button>
                           <button onClick={() => setSelectedPartnerId(isExpanded ? null : partner.id)}
                             className="h-8 px-3 text-[10px] font-black text-slate-500 hover:text-primary bg-slate-50 dark:bg-white/5 rounded-lg transition-colors">
                             {isExpanded ? 'Fechar' : 'Cupons'}
@@ -1282,16 +1320,15 @@ export default function AdminDashboard() {
                 })}
               </div>
 
-              {/* New Partner Modal */}
               <AnimatePresence>
                 {showNewPartnerModal && (
                   <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      onClick={() => setShowNewPartnerModal(false)}
+                      onClick={() => { setShowNewPartnerModal(false); setEditingPartnerId(null); }}
                       className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
                     <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                       className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
-                      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">Novo Parceiro</h3>
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">{editingPartnerId ? 'Editar Parceiro' : 'Novo Parceiro'}</h3>
                       <div className="space-y-4">
                         {[{ label: 'Nome', key: 'name', placeholder: 'João Silva', type: 'text' },
                           { label: 'E-mail', key: 'email', placeholder: 'joao@email.com', type: 'email' },
@@ -1312,11 +1349,11 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-3 mt-8">
-                        <button onClick={() => setShowNewPartnerModal(false)}
+                        <button onClick={() => { setShowNewPartnerModal(false); setEditingPartnerId(null); }}
                           className="flex-1 h-12 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-500 font-black text-xs hover:bg-slate-50 transition-all">Cancelar</button>
                         <button onClick={handleCreatePartner} disabled={savingPartner}
                           className="flex-1 h-12 bg-primary text-white font-black rounded-2xl text-xs hover:opacity-90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
-                          {savingPartner ? 'Salvando...' : 'Criar Parceiro'}
+                          {savingPartner ? 'Salvando...' : editingPartnerId ? 'Salvar Alterações' : 'Criar Parceiro'}
                         </button>
                       </div>
                     </motion.div>
