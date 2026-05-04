@@ -8,6 +8,7 @@ import ExpansionValueProposition from '../components/expansion/ExpansionValuePro
 import { ExpansionOpportunity, ExpansionHowItWorks } from '../components/expansion/ExpansionOpportunity';
 import { ExpansionFeatures, ExpansionEarnings } from '../components/expansion/ExpansionFeatures';
 import { ExpansionLeadForm, ExpansionFAQ } from '../components/expansion/ExpansionLeadForm';
+import { ExpansionInvestment } from '../components/expansion/ExpansionInvestment';
 import { Footer } from '../components/Footer';
 import FloatingActions from '../components/FloatingActions';
 
@@ -23,6 +24,7 @@ export default function ExpansionLanding() {
         <ExpansionValueProposition />
         <ExpansionOpportunity />
         <ExpansionHowItWorks />
+        <ExpansionInvestment />
         <ExpansionFeatures />
         <ExpansionEarnings />
         <ExpansionLeadForm />
