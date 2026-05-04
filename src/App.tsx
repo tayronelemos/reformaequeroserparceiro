@@ -19,10 +19,7 @@ export default function App() {
       setCurrentPath(window.location.pathname);
     };
 
-    // Listen for back/forward buttons
     window.addEventListener('popstate', handleLocationChange);
-    
-    // Listen for custom navigation events
     window.addEventListener('pushstate', handleLocationChange);
     window.addEventListener('replacestate', handleLocationChange);
 
@@ -33,32 +30,49 @@ export default function App() {
     };
   }, []);
 
-  // Scroll to top on route change — use 'instant' so the page never appears mid-scroll
+  // Scroll to top on route change, or scroll to hash section if present
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    const hash = window.location.hash; // e.g. "#app", "#faq"
+
+    if (hash) {
+      // Aguarda a página renderizar antes de rolar para a seção
+      const tryScroll = (attempts = 0) => {
+        const el = document.querySelector(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else if (attempts < 10) {
+          setTimeout(() => tryScroll(attempts + 1), 150);
+        }
+      };
+      setTimeout(() => tryScroll(), 100);
+    } else {
+      // Sem hash: vai pro topo instantaneamente
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
   }, [currentPath]);
 
-  // Simple interceptor for <a> tags to enable SPA navigation
+  // Intercepta cliques em <a> para SPA navigation
   useEffect(() => {
     const handleAnchorClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const anchor = target.closest('a');
-      
+
       if (anchor && anchor.href && anchor.origin === window.location.origin) {
         const path = anchor.pathname;
         const hash = anchor.hash;
-        
-        // If it's just an anchor link on the same page, let it be handled by browser/Footer.tsx
+
+        // Âncora na mesma página: deixa o browser / navbar tratarem
         if (path === window.location.pathname && hash) {
           return;
         }
 
-        // If it's a different page, intercept
+        // Navegação para outra página (com ou sem hash)
         if (path !== window.location.pathname) {
           e.preventDefault();
-          window.history.pushState({}, '', path);
+          const fullPath = hash ? `${path}${hash}` : path;
+          window.history.pushState({}, '', fullPath);
           window.dispatchEvent(new Event('pushstate'));
         }
       }

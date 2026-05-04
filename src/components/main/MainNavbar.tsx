@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, ChevronDown, ArrowRight } from 'lucide-react';
+import { Menu, X, ArrowRight } from 'lucide-react';
 import logoClaro from '../../assets/images/logo-claro.png';
 
 export default function MainNavbar() {
@@ -12,6 +12,39 @@ export default function MainNavbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const isHome = window.location.pathname === '/' || window.location.pathname === '';
+
+  // Se estiver em outra página, prefixar âncoras com '/'
+  const resolveHref = (href: string) => {
+    if (href.startsWith('#')) {
+      return isHome ? href : `/${href}`;
+    }
+    return href;
+  };
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    setIsMobileMenuOpen(false);
+
+    // Âncora na mesma página (Home): scroll suave
+    if (href.startsWith('#') && isHome) {
+      e.preventDefault();
+      const el = document.querySelector(href);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    // Âncora em outra página: navega para Home + scroll para seção
+    if (href.startsWith('#') && !isHome) {
+      e.preventDefault();
+      window.history.pushState({}, '', `/${href}`);
+      window.dispatchEvent(new Event('pushstate'));
+      setTimeout(() => {
+        const el = document.querySelector(href);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
+  };
 
   const menuItems = [
     { label: 'Home', href: '/' },
@@ -42,7 +75,8 @@ export default function MainNavbar() {
               {menuItems.map((item) => (
                 <a
                   key={item.label}
-                  href={item.href}
+                  href={resolveHref(item.href)}
+                  onClick={(e) => handleNavClick(e, item.href)}
                   className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-primary transition-colors h-full py-2"
                 >
                   {item.label}
@@ -84,8 +118,8 @@ export default function MainNavbar() {
                   {menuItems.map((item) => (
                     <a
                       key={item.label}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      href={resolveHref(item.href)}
+                      onClick={(e) => handleNavClick(e, item.href)}
                       className="flex items-center justify-between text-xs font-black uppercase tracking-[0.2em] text-slate-900 py-2 border-b border-slate-50 last:border-0"
                     >
                       {item.label}
