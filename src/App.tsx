@@ -33,9 +33,11 @@ export default function App() {
     };
   }, []);
 
-  // Scroll to top on route change
+  // Scroll to top on route change — use 'instant' so the page never appears mid-scroll
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, [currentPath]);
 
   // Simple interceptor for <a> tags to enable SPA navigation
